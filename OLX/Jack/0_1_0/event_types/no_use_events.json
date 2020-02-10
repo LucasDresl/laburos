@@ -1,0 +1,6 @@
+["app_open", "on_create", "apps", "push_dis", "pushDis", "push_rcv",
+  "pushRcv", "UAReg", "ua_reg", "uareg", "push_dismissed", "push_show",
+  "fetching_matrix", "not_found", "permissions_impression", "userBadgeCount",
+  "test_assignment", "test_impression", "test_discovered", "FCMReg", "APNSReg",
+  "appOpn", "appOpen", "google_play_services", "fetchTestDefinitionsError",
+  "messages_scheduler_ended", "messages_scheduler_started", "chat_auth_fail"]
