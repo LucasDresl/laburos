@@ -1,0 +1,530 @@
+
+
+drop table if exists items_marcados_como_vendidos;
+select
+     cast(operation_timestamp as date) as date_nk,
+     cast(user_id as varchar(200)) as seller_id,
+     cast(buyer_id as varchar(200)) as buyer_id,
+     cast(id as varchar(200)) as item_id,
+     livesync_dbname as country,
+     'mark_as_sold' as trigger
+   into temp items_marcados_como_vendidos
+ from livesync.panamera_ads
+ where
+    status = 'sold'
+   and livesync_dbname in ('olxtz' , 'olxpk' , 'olxke' , 'olxgh' ,'olxza' , 'olxin' , 'olxng' , 'olxug')
+   and (buyer_id is not null or buyer_id != 0)
+   and cast(operation_timestamp as date) > '2019-06-01'
+group by 1,2,3,4,5,6
+
+drop table if exists items_marcados_como_vendidos_final;
+ select
+  *
+   into temp items_marcados_como_vendidos_final
+  from items_marcados_como_vendidos
+ where buyer_id != '0'
+
+drop table if exists item_tap_call;
+select
+  cast(date_sent_nk as date) as date_nk,
+  split_part(seller_sk , '|' , 6) as seller_id,
+  split_part(panamera_user_sk , '|' ,6) as buyer_id,
+  split_part(listing_sk , '|' , 4) as item_id,
+  split_part(country_sk, '|' , 1) || split_part(country_sk, '|' , 3) as country,
+  'item_tap_call' as trigger
+ into temp item_tap_call
+from ods.fact_replies
+ where action_sk like '%call%'
+   and panamera_user_sk != 'unknown'
+   and country_sk in ('olx|mea|tz' , 'olx|mea|pk' , 'olx|mea|ke' , 'olx|mea|gh' ,'olx|mea|za' , 'olx|asia|in' , 'olx|mea|ng' , 'olx|mea|ug')
+   and date_sent_nk > '2019-06-01'
+group by 1,2,3,4,5,6
+
+
+drop table if exists meaningful_conversation;
+select
+  min(date_sent_nk) as date_nk,
+  split_part(seller_sk , '|' , 6) as seller_id,
+  split_part(buyer_sk , '|' ,6) as buyer_id,
+  split_part(listing_sk , '|' , 4) as item_id,
+  split_part(country_sk, '|' , 1) || split_part(country_sk, '|' , 3) as country,
+  'meaningful_conversation' as trigger
+ into temp meaningful_conversation
+from ods.fact_conversations_daily
+ where
+   interaction_num_in_conv = 3 and
+   country_sk in ('olx|mea|tz' , 'olx|mea|pk' , 'olx|mea|ke' , 'olx|mea|gh' ,'olx|mea|za' , 'olx|asia|in' , 'olx|mea|ng' , 'olx|mea|ug')
+  and date_sent_nk > '2019-06-01'
+group by 2,3,4,5,6
+
+with tablaaa as (
+select
+  *
+  from items_marcados_como_vendidos_final
+union all
+select
+  *
+ from item_tap_call
+union all
+ select
+  *
+  from meaningful_conversation)
+
+  select count(*) from tablaaa
+
+select * from meaningful_conversation limit 100
+
+
+
+
+
+
+
+
+
+
+
+drop table if exists meaningful_conversation;
+WITH tCountAtChange as
+    (SELECT *, ROW_NUMBER() OVER (PARTITION BY conversation_nk ORDER BY time_sent_utc) + 1 as aCounter
+            FROM
+                (SELECT message_id, time_sent_utc, conversation_nk
+     ,CASE WHEN LAG(msg_type) OVER (PARTITION BY conversation_nk ORDER BY time_sent_utc) <> msg_type THEN 'YES' ELSE 'NO' END as ChangeFlag
+            FROM ods.fact_conversations_daily) a
+              WHERE ChangeFlag = 'YES'),
+results as (
+      SELECT
+        t.conversation_nk,
+        COALESCE(MAX(aCounter), 1) as MaxCounter
+      FROM ods.fact_conversations_daily t
+        LEFT JOIN tCountAtChange
+          ON t.message_id = tCountAtChange.message_id
+           WHERE date_sent_1st_msg_nk > '2018-08-01'    -- Dia en el que se completa el primer ida y vuelta
+              AND response_channel_sk IN ('web|desktop_web' , 'web|mobile_web' , 'mobile_app|android','mobile_app|ios',NULL)
+      GROUP BY t.conversation_nk
+  )
+    SELECT *
+    into temp meaningful_conversation
+    FROM results
+    WHERE MaxCounter > 3
+
+drop table if exists meaningfulconveration;
+select
+  split_part(listing_sk , '|' , 4) as id,
+  split_part(buyer_sk , '|' ,6) as buyer,
+  split_part(seller_sk , '|' , 6) as seller,
+  split_part(listing_sk , '|' , 4) || '-' || split_part(seller_sk , '|' , 6) || '-' || split_part(buyer_sk , '|' ,6) as item_seller_buyer,
+  1 as meaningful
+  into temp meaningfulconveration
+ from ods.fact_conversations_daily k
+  inner join meaningful_conversation m on m.conversation_nk=k.conversation_nk
+
+drop table if exists item_tap_call;
+select
+  split_part(listing_sk , '|' , 4) as id,
+  split_part(panamera_user_sk , '|' ,7) as buyer,
+  split_part(seller_sk , '|' , 6) as seller,
+  split_part(listing_sk , '|' , 4) || '-' || split_part(seller_sk , '|' , 6) || '-' || split_part(panamera_user_sk , '|' ,6) as item_seller_buyer
+ into temp item_tap_call
+from ods.fact_replies
+ where action_sk like '%call%'
+   and panamera_user_sk != 'unknown'
+   and country_sk = 'olx|asia|in'
+ limit 100
+
+
+
+select buyer_type,meaningful ,tap_call ,count(distinct item_seller_buyer) as item_seller_buyer from (
+select
+   n.*,
+   case when m.item_seller_buyer is not null then 1 else 0 end meaningful,
+   case when v.item_seller_buyer is not null then 1 else 0 end tap_call
+  from items_marcados_como_vendidos n
+    left join meaningfulconveration m on m.item_seller_buyer=n.item_seller_buyer
+    left join item_tap_call v on v.item_seller_buyer=n.item_seller_buyer) f
+ group by 1,2,3
+
+-- cantidad de mark as sold
+
+select
+   sum(case when item_seller_buyer is not null then 1 else 0 end) as tiene_buyer_id ,
+   sum(case when item_seller_buyer is null then 1 else 0 end) as no_tiene_buyer_id ,
+   count(*) as total_mark_as_sold from (
+select
+  distinct
+           id ,
+           user_id ,
+           buyer_id,
+           id || '-' || user_id || '-' || buyer_id as item_seller_buyer
+ from livesync.panamera_ads
+ where status = 'sold'
+   and livesync_dbname = 'olxin')
+
+
+
+
+select meaningful , count(distinct item_seller_buyer) as item_seller_buyer from (
+select
+   n.*,
+   case when m.item_seller_buyer is not null then 1 else 0 end meaningful
+  from items_marcados_como_vendidos n
+    left join meaningfulconveration m on m.item_seller_buyer=n.item_seller_buyer) t
+ group by 1
+
+
+
+-- check
+
+
+select
+   n.*,
+   case when m.item_seller_buyer is not null then 1 else 0 end meaningful,
+   case when m.item_seller_buyer is not null then 1 else 0 end tap_call
+  from items_marcados_como_vendidos n
+    left join meaningfulconveration m on m.item_seller_buyer=n.item_seller_buyer
+    left join item_tap_call v on v.item_seller_buyer=n.item_seller_buyer
+limit 100
+
+select
+  *
+ from ods.fact_replies
+ where
+  split_part(listing_sk , '|' , 4) =1306699837 and
+  split_part(user_sk , '|' ,6) = 127133679 and
+  split_part(seller_sk , '|' , 6) = 220053505
+
+select * from hydra.panameraolx_mea_ninja_chat_201903
+ where message_id = '64475801-bbaa-4bdd-a888-1e17f87df28c'
+
+
+------------------------------------------------------------------------------------------
+-------------------------------- collecting ratings --------------------------------------
+
+-- Item tap call
+drop table if exists item_tap_call;
+select
+       distinct
+       date(SUBSTRING(date_sent_nk FROM 1 FOR 10)) as date_event_nk,
+       split_part(panamera_user_sk , '|' , 6) as buyer_id,
+       split_part(seller_sk , '|' , 6) as seller_id,
+       split_part(listing_sk , '|' , 4) as item_id,
+       split_part(country_sk , '|' ,1) || split_part(country_sk , '|' ,3) as country,
+       'item_tap_call' as trigger,
+       split_part(panamera_user_sk , '|' , 6) || '-' || split_part(seller_sk , '|' , 6) || '-' || split_part(listing_sk , '|' , 4) as buyer_seller_item_id
+    into temp item_tap_call
+     from ods.fact_replies
+  where action_sk like '%call%'
+       and country_sk = 'olx|mea|za'
+       and date_sent_nk > '2019-02-11'
+  order by panamera_user_sk , date_sent_nk
+
+select * from item_tap_call limit 100
+
+-- Mark as sold
+drop table if exists mark_as_sold;
+select *
+ into temp mark_as_sold
+  from (
+select
+  distinct
+     date(SUBSTRING(operation_timestamp FROM 1 FOR 10)) as date_event_nk ,
+     buyer_id ,
+     user_id as seller_id ,
+     id as item_id,
+     livesync_dbname as country,
+     'mark_as_sold' as trigger,
+     buyer_id || '-' || user_id || '-' || id as buyer_seller_item_id
+
+ from livesync.panamera_ads
+ where status = 'sold'
+   and operation_timestamp > '2019-02-10'
+   and livesync_dbname = 'olxza'
+   and buyer_id is not null
+  order by operation_timestamp , buyer_id) j
+  where buyer_id != 0
+
+
+-- Meaningful conversation
+
+drop table if exists meaningful_conversation;
+select
+  distinct
+  date(SUBSTRING(date_sent_nk FROM 1 FOR 10)) as date_event_nk ,
+  split_part(buyer_sk , '|' , 6) as buyer_id,
+  split_part(seller_sk , '|' , 6) as seller_id,
+  split_part(listing_sk , '|' , 4) as item_id,
+  split_part(country_sk , '|' ,1) || split_part(country_sk , '|' ,3) as country,
+  'meaningful_conversation' as trigger,
+  split_part(buyer_sk , '|' , 6) || '-' || split_part(seller_sk , '|' , 6) || '-' || split_part(listing_sk , '|' , 4) as buyer_seller_item_id
+ into temp meaningful_conversation
+ from ods.fact_conversations_daily
+ where country_sk in ('olx|mea|za')
+   and interaction_num_in_conv = 3
+   and date_sent_nk > '2019-01-01'
+
+with base as (
+  select
+    date_event_nk,
+    country,
+    trigger,
+    buyer_seller_item_id
+  from mark_as_sold
+  union
+  select
+    date_event_nk,
+    country,
+    trigger,
+    buyer_seller_item_id
+  from item_tap_call
+  union
+  select
+    date_event_nk,
+    country,
+    trigger,
+    buyer_seller_item_id
+  from meaningful_conversation
+)
+  select
+    date_event_nk,
+    count(distinct case when trigger='mark_as_sold' then buyer_seller_item_id else null end) as mark_as_sold,
+    count(distinct case when trigger='meaningful_conversation' then buyer_seller_item_id else null end) as meaningful_conversation,
+    count(distinct case when trigger='item_tap_call' then buyer_seller_item_id else null end) as item_tap_call
+  from base
+  where date_event_nk > '2019-03-01'
+    group by 1
+  limit 1000
+
+with base as (
+  select
+    date_event_nk,
+    country,
+    trigger,
+    buyer_seller_item_id
+  from mark_as_sold
+  union
+  select
+    date_event_nk,
+    country,
+    trigger,
+    buyer_seller_item_id
+  from item_tap_call
+  union
+  select
+    date_event_nk,
+    country,
+    trigger,
+    buyer_seller_item_id
+  from meaningful_conversation
+)
+  select
+    buyer_seller_item_id,
+    count(distinct case when trigger='mark_as_sold' then buyer_seller_item_id else null end) as mark_as_sold,
+    count(distinct case when trigger='meaningful_conversation' then buyer_seller_item_id else null end) as meaningful_conversation,
+    count(distinct case when trigger='item_tap_call' then buyer_seller_item_id else null end) as item_tap_call
+  from base
+  where date_event_nk > '2019-04-01'
+    group by 1
+
+select notificationtype , count(distinct session_long) as qty_users
+   from ods.panameraolx_mea_hydra_ninja_android_last_month
+     where trackevent = 'push_show'
+     and notificationtype in ('moderation_ok' , 'ad_expired' , 'moderation_hard' , 'featured_ad_expired')
+   group by 1 limit 100
+
+-----------------------------------------------------------------------
+-----------------------------------------------------------------------
+
+   select
+      seller_sk ,
+      round(median(seconds_to_1st_response)/3600) as mediana_hours,
+      round(avg(seconds_to_1st_response)/3600) as mean_hours,
+      round(percentile_cont(0.9) WITHIN GROUP (ORDER BY seconds_to_1st_response)/3600) percentil_90_hours
+    into temp time_to_reply
+   from ods.fact_conversations_daily y
+  where msg_num_in_conv=1
+         and conv_init_by_buyer is true
+         and country_sk = 'olx|asia|in'
+         and seconds_to_1st_response is not null
+         and date_sent_1st_msg_nk < '2019-04-30' -- Necesariamente tuvieron que haber pasado 24 horas ya
+         and date_sent_1st_msg_nk >= '2019-03-01' --
+ group by 1
+
+
+
+
+select
+  date_sent_nk ,
+  count(distinct conversation_nk) as meaningful_conversation
+  from ods.fact_conversations_daily
+ where country_sk in ('olx|asia|in')
+
+
+select * from ods.panameraolx_mea_hydra_ninja_android_last_month
+  where trackevent like '%deeplink%'
+ limit 100
+
+
+select
+  distinct
+  session_long,
+  case when is_session_long_seq_1 = 1 then date_nk else null end as date_nk
+      from ods.fact_user_hydra_browsing_activity
+    where is_panamera = true
+ limit 100
+
+
+drop table if exists items_marcados_como_vendidos;
+select
+     cast(user_id as varchar(200)) as seller_id,
+     cast(buyer_id as varchar(200)) as buyer_id,
+     cast(id as varchar(200)) as item_id,
+     livesync_dbname as country,
+     'mark_as_sold' as trigger
+   into temp items_marcados_como_vendidos
+ from livesync.panamera_ads
+ where
+    status = 'sold'
+   and livesync_dbname in ( 'olxpk'  , 'olxin')
+   and (buyer_id is not null or buyer_id != 0)
+   and extract(week from cast(operation_timestamp as date)) = 24
+group by 1,2,3,4,5
+
+drop table if exists items_marcados_como_vendidos_final;
+ select
+  *
+   into temp items_marcados_como_vendidos_final
+  from items_marcados_como_vendidos
+ where buyer_id != '0'
+
+drop table if exists item_tap_call;
+select
+  split_part(seller_sk , '|' , 6) as seller_id,
+  split_part(panamera_user_sk , '|' ,6) as buyer_id,
+  split_part(listing_sk , '|' , 4) as item_id,
+  split_part(country_sk, '|' , 1) || split_part(country_sk, '|' , 3) as country,
+  'item_tap_call' as trigger
+ into temp item_tap_call
+from ods.fact_replies
+ where action_sk like '%call%'
+   and panamera_user_sk != 'unknown'
+   and country_sk in ( 'olx|mea|pk'  , 'olx|asia|in')
+   and extract(week from cast(date_sent_nk as date)) = 23
+group by 1,2,3,4,5
+
+
+drop table if exists meaningful_conversation;
+select
+  split_part(seller_sk , '|' , 6) as seller_id,
+  split_part(buyer_sk , '|' ,6) as buyer_id,
+  split_part(listing_sk , '|' , 4) as item_id,
+  split_part(country_sk, '|' , 1) || split_part(country_sk, '|' , 3) as country,
+  'meaningful_conversation' as trigger
+ into temp meaningful_conversation
+from ods.fact_conversations_daily
+ where
+   interaction_num_in_conv = 3 and
+   country_sk in ('olx|mea|pk' , 'olx|asia|in')
+  and extract(week from cast(date_sent_nk as date)) = 23
+group by 1,2,3,4,5;
+
+
+select
+  *
+  from items_marcados_como_vendidos_final
+union all
+select
+  *
+ from item_tap_call
+union all
+ select
+  *
+  from meaningful_conversation
+
+select * from meaningful_conversation limit 100
+
+-------------------------------------------------
+
+;drop table if exists items_marcados_como_vendidos;
+select
+     cast(user_id as varchar(200)) as seller_id,
+     cast(buyer_id as varchar(200)) as buyer_id,
+     cast(id as varchar(200)) as item_id,
+     livesync_dbname as country,
+     'mark_as_sold' as trigger,
+     cast(operation_timestamp as date)
+   into temp items_marcados_como_vendidos
+ from livesync.panamera_ads
+ where
+    status = 'sold'
+   and livesync_dbname in ( 'olxpk'  , 'olxin')
+   and (buyer_id is not null or buyer_id != 0)
+group by 1,2,3,4,5,6
+
+
+select * from items_marcados_como_vendidos
+where cast(operation_timestamp as date) = '2019-05-04'
+limit 100
+
+
+-------------------------------------------------
+
+;drop table if exists items_marcados_como_vendidos;
+select
+     cast(user_id as varchar(200)) as seller_id,
+     cast(buyer_id as varchar(200)) as buyer_id,
+     cast(id as varchar(200)) as item_id,
+     livesync_dbname as country,
+     'mark_as_sold' as trigger
+   into temp items_marcados_como_vendidos
+ from livesync.panamera_ads
+ where
+    status = 'sold'
+   and livesync_dbname in ( 'olxpk'  , 'olxin')
+   and (buyer_id is not null or buyer_id != 0)
+   and cast(operation_timestamp as date) = '2019-05-01'
+group by 1,2,3,4,5
+
+;drop table if exists items_marcados_como_vendidos_final;
+ select
+  *
+   into temp items_marcados_como_vendidos_final
+  from items_marcados_como_vendidos
+ where buyer_id != '0'
+
+;drop table if exists item_tap_call;
+select
+  split_part(seller_sk , '|' , 6) as seller_id,
+  split_part(panamera_user_sk , '|' ,6) as buyer_id,
+  split_part(listing_sk , '|' , 4) as item_id,
+  split_part(country_sk, '|' , 1) || split_part(country_sk, '|' , 3) as country,
+  'item_tap_call' as trigger,
+  cast(date_sent_nk as date) as datee
+ into temp item_tap_call
+from ods.fact_replies
+ where action_sk like '%call%'
+   and panamera_user_sk != 'unknown'
+   and country_sk in ( 'olx|mea|pk'  , 'olx|asia|in')
+   and cast(date_sent_nk as date) = '2019-05-01'
+group by 1,2,3,4,5,6
+
+select * from item_tap_call limit 100
+
+
+;drop table if exists meaningful_conversation;
+select
+  split_part(seller_sk , '|' , 6) as seller_id,
+  split_part(buyer_sk , '|' ,6) as buyer_id,
+  split_part(listing_sk , '|' , 4) as item_id,
+  split_part(country_sk, '|' , 1) || split_part(country_sk, '|' , 3) as country,
+  'meaningful_conversation' as trigger
+ into temp meaningful_conversation
+from ods.fact_conversations_daily
+ where
+   interaction_num_in_conv = 6 and
+   country_sk in ('olx|mea|pk' , 'olx|asia|in')
+  and cast(date_sent_nk as date) = '2019-05-01'
+group by 1,2,3,4,5;
+
+select * from items_marcados_como_vendidos limit 100
+
+

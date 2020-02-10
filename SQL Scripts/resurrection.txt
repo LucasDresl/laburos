@@ -1,0 +1,99 @@
+
+
+
+drop table if exists newusers_20190501;
+select
+  session_long,
+  is_session_long_seq_1
+  into temp table newusers_20190501
+   from ods.fact_user_hydra_browsing_activity
+ where is_panamera = true
+   and country_sk = 'olx|asia|in'
+   and is_session_long_seq_1 is true
+   and date_nk = '2019-05-01'
+group by 1,2
+
+
+drop table if exists matrix_dau;
+select
+  a.session_long,
+  a.date_nk,
+  case when channel_sk similar to ('%android%|%ios%') then 1 else 0 end as app,
+  case when channel_sk similar to ('%desktop%|%mobile%') then 1 else 0 end as pwa
+  into temp table matrix_dau
+   from ods.fact_user_hydra_browsing_activity a
+    inner join newusers_20190501 b on a.session_long=b.session_long and a.is_session_long_seq_1=b.is_session_long_seq_1
+ where is_panamera = true
+ and country_sk = 'olx|asia|in'
+group by 1,2,3,4
+
+
+drop table if exists repliers_browsing;
+select
+  a.session_long,
+  a.date_nk
+  into temp table repliers_browsing
+   from ods.fact_user_hydra_browsing_activity a
+    inner join newusers_20190501 b on a.session_long=b.session_long
+ where
+   (is_panamera = true and country_sk = 'olx|asia|in' and num_tap_call>0)
+   or
+   (is_panamera = true and country_sk = 'olx|asia|in' and num_chat_1st_reply>0)
+group by 1,2
+
+
+
+
+
+
+
+
+
+
+
+
+
+select
+  session_long,
+  test_name,
+  test_variation
+  from ods.panameraolx_asia_hydra_ninja_android_last_month
+   where test_name is not null
+limit 100
+
+with temp_exp as
+      (select session_long,
+              test_name,
+              test_variation as variation,
+              min (date_event_nk) as first_exposition
+      from ods.panameraolx_mea_hydra_ninja_web_201906
+      where country_sk='olx|mea|pk'
+      and trackevent='test_impression'
+      and test_name like 'pan-28798'
+      and date_event_nk between '2019-06-01' and '2019-06-03'
+      and test_variation is not null
+      and channel_nk='mobile_web'
+      group by 1,2,3)
+
+select a.session_long,
+       a.test_name,
+       a.variation,
+       a.first_exposition,
+       b.date_event_nk,
+       b.test_variation,
+       count(distinct case when b.test_variation is not null then b.session_long
+               else null end) as count_dups
+ from  temp_exp as a
+left join
+       (select session_long,date_event_nk,test_variation
+       from ods.panameraolx_mea_hydra_ninja_web_201906
+       where country_sk='olx|mea|pk'
+      and trackevent='test_impression'
+      and test_name like 'pan-28798'
+      and date_event_nk between '2019-06-01' and '2019-06-03'
+      and test_variation is not null
+      and channel_nk='mobile_web') as b
+on a.session_long=b.session_long and b.date_event_nk>=first_exposition and a.variation != b.test_variation
+group by 1,2,3,4,5,6;
+
+

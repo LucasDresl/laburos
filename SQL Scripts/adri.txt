@@ -1,0 +1,1318 @@
+
+
+WITH verified AS (
+    SELECT session
+from ods.panameraolx_mea_hydra_ninja_web_last_month
+WHERE trackevent = 'verify_complete'
+)
+SELECT
+  *
+FROM ods.panameraolx_mea_hydra_ninja_web_last_month
+JOIN verified USING (session)
+limit 500
+;
+
+
+
+select *
+ into temp one_listings
+from (
+select
+  user_sk,
+  count(distinct listing_sk) as listings
+    from ods.fact_listings
+ where listing_net_sk like 'net%'
+    and country_sk = 'olx|asia|in'
+    and category_sk like '%olx|asia|in|5|84%'
+    and date_posted_nk > '2019-02-11'
+ group by 1) sk
+  where sk.listings = 1
+
+select *
+ into temp more_than_one_listings
+from (
+select
+  user_sk,
+  count(distinct listing_sk) as listings
+    from ods.fact_listings
+ where listing_net_sk like 'net%'
+    and country_sk = 'olx|asia|in'
+    and category_sk like '%olx|asia|in|5|84%'
+    and date_posted_nk > '2019-02-11'
+ group by 1) sk
+  where sk.listings > 1
+
+select
+  distinct buyer_sk
+  from ods.fact_conversations_daily m
+    inner join one_listings n on m.buyer_sk=n.user_sk
+ where msg_num_in_conv = 1
+  and conv_init_by_buyer is true
+ limit 50000
+
+-------------------------------------------------------------------
+
+select
+    date_sent_1st_msg_nk,
+    count(distinct case when seconds_to_1st_response is null then conversation_nk else null end) as conversations_no_answer,
+    count(distinct conversation_nk) as conversations_iniciated
+  from ods.fact_conversations_daily
+    where msg_num_in_conv = 1
+    and conv_init_by_buyer is true
+    and country_sk = 'olx|asia|in'
+    and date_sent_1st_msg_nk > '2019-03-01'
+ group by 1
+limit 100
+
+select CURRENT_TIMESTAMP
+
+
+select params_extras_message_id,
+       t.params_unique_event_id,
+       conversation_nk,
+       params_country_code,
+       case when u.params_unique_event_id is not null then 1 else 0 end              is_quijote_outgoing_push,
+        u.params_device_type as params_device_type_push,
+        u.params_response_unique_message_id as params_unique_message_id_push ,
+        case when r.params_unique_event_id is not null then 1 else 0 end              is_quijote_outgoing_email,
+        r.params_response_unique_message_id as params_unique_message_id_email,
+        case when l.params_unique_event_id is not null then 1 else 0 end              is_quijote_outgoing_sms,
+        l.params_response_unique_message_id as params_unique_message_id_sms
+   from spectrum.usercomms_quijote_incoming_events t
+    inner join (select distinct conversation_nk, message_id from ods.fact_conversations_daily where msg_num_in_conv = 1 and conv_init_by_buyer is true and country_sk like '%pk%' and date_sent_1st_msg_nk = '2019-04-15') k on k.message_id=t.params_extras_message_id
+    left join (select distinct params_unique_event_id , params_device_type , params_response_unique_message_id from spectrum.usercomms_quijote_outgoing_push where year=2019 and month=4 and day in (13,14,15,16,17) and params_status='success' and params_country_code = 'PK') u on u.params_unique_event_id = t.params_unique_event_id
+    left join (select distinct params_unique_event_id , params_response_unique_message_id from spectrum.usercomms_quijote_outgoing_email where year=2019 and month=4 and day in (13,14,15,16,17) and params_status='success' and params_country_code = 'PK') r on r.params_unique_event_id = t.params_unique_event_id
+    left join (select distinct params_unique_event_id , params_response_unique_message_id from spectrum.usercomms_quijote_outgoing_sms where year=2019 and month=4 and day in (13,14,15,16,17) and params_status='success' and params_country_code = 'PK') l on l.params_unique_event_id = t.params_unique_event_id
+  where params_country_code like '%PK%'
+limit 100
+
+select
+  conversation_nk,
+  case when seconds_to_1st_response is null then 0 else 1 end as censored,
+  case when seconds_to_1st_response is null then DATEDIFF(hour,date_sent_1st_msg_nk , CURRENT_TIMESTAMP::timestamp) else round(seconds_to_1st_response/60/60) end as hours_to_answer,
+  split_part(n.seller_sk , '|' , 6) as seller_sk,
+  split_part(n.listing_sk , '|' , 4) as listings_sk,
+  m.category_sk,
+  category_l1_name_en,
+  user_high_low_volume_nk,
+  user_first_time_returning_nk
+  from ods.fact_conversations_daily n
+    left join (select listing_sk , category_sk from ods.fact_listings where country_sk like '%pk%' group by 1,2) m on m.listing_sk=n.listing_sk
+    left join (select category_sk , category_l1_name_en from ods.dim_categories where country_sk = 'olx|mea|pk') g on g.category_sk=m.category_sk
+    left join (select
+                   split_part(n.user_sk , '|' , 6) as seller_sk,
+                   user_high_low_volume_nk,
+                   user_first_time_returning_nk
+                 from ods.fact_user_segments n
+                inner join (select user_sk , max(date_nk) as date_nk from ods.fact_user_segments where split_part(user_sk,'|',3)='pk' group by 1 ) m on m.user_sk=n.user_sk and m.date_nk=n.date_nk
+                   where split_part(n.user_sk,'|',3)='pk'
+                order by 1) k on k.seller_sk=split_part(n.seller_sk , '|' , 6)
+      where msg_num_in_conv = 1
+      and conv_init_by_buyer is true
+      and country_sk like '%pk%'
+  and date_sent_1st_msg_nk = '2019-04-15'
+  order by 1
+limit 100
+
+
+select user_sk from ods.fact_user_segments
+  --where date_nk > '2019-03-01'
+limit 100
+
+select * from ods.fact_user_segments limit 5
+
+select split_part(user_sk , '|' , 6) as seller_sk,
+                                 user_high_low_volume_nk,
+                                 user_first_time_returning_nk from ods.fact_user_segments limit 100
+
+
+select
+  date_event_nk,
+  count(distinct session_long) as qty_user
+   from ods.panameraolx_mea_hydra_ninja_web_last_month
+ where trackevent = 'profile_completion_show' and origin_nk = 'profile_bar'
+group by 1
+
+select
+  date_event_nk,
+  origin_nk,
+  count(distinct session_long) as qty_user
+   from ods.panameraolx_mea_hydra_ninja_web_last_month
+ where trackevent = 'verify_show_pin'
+group by 1,2
+
+select
+  distinct
+   trackevent,
+   chosen_option,
+   flow_type,
+   flow_step
+  from ods.panameraolx_mea_hydra_ninja_web_last_month
+ where flow_step = 'valid_phone_code'
+
+
+------------- Chats message received ------
+
+select
+    message_id,
+    case when seconds_to_1st_response is null then 1 else 0 end as silent_seller,
+    case when n.params_extras_message_id is null then 1 else 0 end as quijote_incoming
+   -- case when o.params_unique_event_id is null then 1 else 0 end as quijote_incoming_email,
+    --case when t.params_unique_event_id is null then 1 else 0 end as quijote_incoming_push,
+    --case when a.params_unique_event_id is null then 1 else 0 end as quijote_incoming_sms
+  from ods.fact_conversations_daily u
+    left join (select params_extras_message_id , params_unique_event_id from spectrum.usercomms_quijote_incoming_events where params_country_code = 'PK' and year=2019 and month=4 and day in (13,14,15,16,17) and params_action_key = 'offline_message') n on n.params_extras_message_id=u.message_id
+    --left join (select params_unique_event_id , params_response_unique_message_id from spectrum.usercomms_quijote_outgoing_email where params_status='success' and params_country_code like '%PK%' and year=2019 and month=4 and day in (13,14,15,16,17)) o on o.params_unique_event_id=n.params_unique_event_id
+    --left join (select params_unique_event_id , params_response_unique_message_id from spectrum.usercomms_quijote_outgoing_push where params_status='success' and params_country_code like '%PK%' and year=2019 and month=4 and day in (13,14,15,16,17) ) t on t.params_unique_event_id=n.params_unique_event_id
+    --left join (select params_unique_event_id , params_response_unique_message_id from spectrum.usercomms_quijote_outgoing_sms where params_status='success' and params_country_code like '%PK%' and year=2019 and month=4 and day in (13,14,15,16,17) ) a on a.params_unique_event_id=n.params_unique_event_id
+      where msg_num_in_conv = 1
+      and conv_init_by_buyer is true
+      and country_sk like '%pk%'
+      and date_sent_1st_msg_nk = '2019-04-15'
+ limit 100
+
+select * from ods.fact_conversations_daily limit 100
+
+select
+  distinct month
+  from spectrum.usercomms_quijote_incoming_events
+    where params_action_key like '%offlin%'
+   limit 100
+
+
+select extract(year from date_featured_nk) as year,
+       extract(month from date_featured_nk) as month,
+       count(distinct listing_sk) as cantidad_de_listings,
+       count(distinct user_sk) as usuarios_featureando
+    from ods.fact_items_with_paid_products
+   where country_sk = 'olx|mea|pk'
+  group by 1,2
+  order by 1,2
+ limit 100
+
+
+select
+  distinct
+   date_event_nk,
+   trackevent,
+   chosen_option,
+   flow_type,
+   flow_step,
+   count(distinct session_long)
+   from ods.panameraolx_mea_hydra_ninja_android_last_month
+ where trackevent in ('profile_completion_action')
+   group by 1,2,3,4,5
+
+
+select
+  distinct
+   trackevent,
+   login_method,
+   login_submethod
+   from ods.panameraolx_mea_hydra_ninja_android_last_month
+ where trackevent in ('verify_complete','verify_show_pin')
+   group by 1,2,3
+  limit 100
+
+
+------------------------------------------------------------------------------------------------
+------------------------------------------------------------------------------------------------
+
+select
+  session_long,
+  user_nk,
+  case when trackevent = 'onboarding_show' and experiment_variant = 'mandatory_login' then 'Experiment_mandatory' else 'Experiment_no_mandatory' end as experiment_variantt
+    into temp ids_experiment_variants
+    from ods.panameraolx_asia_hydra_ninja_android_last_month
+  group by 1,2,
+      limit 100
+
+--
+-- Chequear si hay usuarios que estuvieron tanto en un experimento como en el otro
+
+select
+  count(distinct case when experiment_variantt = 'Experiment_no_mandatory'then session_long else null end) as mandatory_logi
+
+-- Buyer metrics
+
+select
+  count(distinct session_long)
+  from ods.panameraolx_asia_hydra_ninja_android_last_month
+   inner join (select session_long from ids_experiment_variants where trackevent in ('item_tap_call' , 'item_chat_tap')) t
+
+
+select
+    date_posted_nk,
+    count(distinct case when interaction_num_in_conv=3 then conversation_nk else null end) as meaningful_conversations
+    from ods.fact_conversations_daily t
+      left join (select date_posted_nk ,listing_sk from ods.fact_listings where country_sk = 'olx|mea|pk') m on m.listing_sk=t.listing_sk
+    where country_sk = 'olx|mea|pk'
+       and interaction_num_in_conv = 3
+       and datediff(days , date_posted_nk , date_sent_nk) <= 7
+       and date_sent_nk > '2019-02-01'
+    group by 1
+
+select
+   date_sent_nk,
+   count(distinct reply_sk)
+  from ods.fact_replies
+    where action_sk like '%call%'
+     and country_sk = 'olx|mea|pk'
+     and date_sent_nk > '2019-02-01'
+ group by 1
+
+select
+* from spectrum.hydra_p_olx_android
+ where year=2019 and month=4 and day=5
+    limit 100
+
+
+select
+  country_sk,
+  channel_sk,
+  origin_nk,
+  login_type,
+  count(distinct session_long) as nro_users
+  from ods.fact_login_complete
+    where trackevent = 'login_sign_in_complete'
+        and country_sk in ('olx|asia|in' , 'olx|mea|pk')
+        and date_event_nk > '2019-03-01'
+        and channel_sk like '%mobile_web%'
+  group by 1,2,3,4
+
+
+WITH verified AS (
+    SELECT session
+from ods.panameraolx_asia_hydra_ninja_web_last_month
+WHERE trackevent = 'login_sign_in_complete' and origin_nk = 'home'  and login_type = 'login' and channel_sk like '%mobile_web%'
+)
+SELECT
+  COUNT(DISTINCT CASE WHEN trackevent = 'login_sign_in_complete' and origin_nk = 'home' and login_type = 'login' THEN session_long ELSE NULL END) AS login_sign_in_complete,
+  COUNT(DISTINCT CASE WHEN trackevent in ('item_chat_tap_chat' , 'tem_chat_tap_send_1st_reply' , 'item_tap_call' , 'item_intent_call') THEN session_long ELSE NULL END) AS buyer_event,
+  --COUNT(DISTINCT CASE WHEN trackevent in ('posting_successful_post') THEN session_long ELSE NULL END) AS posting_tap_post,
+  --COUNT(DISTINCT CASE WHEN trackevent in ('social_tap_like') THEN session_long ELSE NULL END) AS social_tap_like
+FROM ods.panameraolx_asia_hydra_ninja_web_last_month
+JOIN verified USING (session)
+;
+
+
+WITH first_step AS (
+    SELECT session
+from ods.panameraolx_asia_hydra_ninja_web_last_month
+WHERE trackevent = 'login_sign_in_complete' and origin_nk = 'home'  and login_type = 'login' and channel_sk like '%mobile_web%'
+)
+SELECT
+  COUNT(DISTINCT CASE WHEN trackevent = 'login_sign_in_complete' and origin_nk = 'home' and login_type = 'login' THEN session_long ELSE NULL END) AS login_sign_in_complete,
+  COUNT(DISTINCT CASE WHEN trackevent in ('item_tap_call' , 'item_chat_tap_send_1st_reply' , 'item_tap_sms' , 'item_chat_tap_sms')THEN session_long ELSE NULL END) AS repliers
+FROM ods.panameraolx_asia_hydra_ninja_web_last_month
+JOIN first_step USING (session)
+;
+
+
+
+
+select distinct trackevent,flow_step,chosen_option,count(distinct session_long) from ods.panameraolx_mea_hydra_ninja_android_last_month
+  where trackevent in ('profile_completion_action' , 'profile_completion_show')
+    group by 1,2,3
+
+
+select
+  *
+   from ods.fact_user_hydra_browsing_activity
+  where channel_sk like '%android%' and
+     is_panamera is true
+     and country_sk like '%in%'
+     and date_nk in ('2019-02-11' , '2019-02-18','2019-02-25', '2019-03-04' , '2019-03-11','2019-03-18','2019-03-25','2019-04-01'
+                     ,'2019-04-08','2019-04-15','2019-04-22','2019-04-29','2019')
+
+-----------------------------------------------------------------------------------------------
+drop table if exists quijote_event_id;
+select
+    t.params_unique_event_id,
+    t.params_extras_message_id,
+    t.params_user_id,
+    t.params_action_key,
+    t.params_country_code,
+    t.month,
+    t.day,
+    case when u.params_response_unique_message_id is null then 0 else 1 end as is_in_quijote_outgoing_push,
+    u.params_response_unique_message_id as params_response_unique_message_id_push,
+    u.params_device_type,
+    case when r.params_response_unique_message_id is null then 0 else 1 end as is_in_quijote_outgoing_email,
+    r.params_response_unique_message_id as params_response_unique_message_id_email,
+    case when l.params_response_unique_message_id is null then 0 else 1 end as is_in_quijote_outgoing_sms,
+    l.params_response_unique_message_id as params_response_unique_message_id_sms
+   into temp quijote_event_id
+  from spectrum.usercomms_quijote_incoming_events t
+    left join (select distinct params_unique_event_id , params_device_type , params_response_unique_message_id from spectrum.usercomms_quijote_outgoing_push where year=2019 and month = 4 and day = 9  and params_status='success' and params_country_code = 'IN') u on u.params_unique_event_id = t.params_unique_event_id
+    left join (select distinct params_unique_event_id , params_response_unique_message_id from spectrum.usercomms_quijote_outgoing_email where year=2019 and month = 4 and day = 9 and params_status='success' and params_country_code = 'IN') r on r.params_unique_event_id = t.params_unique_event_id
+    left join (select distinct params_unique_event_id , params_response_unique_message_id from spectrum.usercomms_quijote_outgoing_sms where year=2019 and month = 4 and day = 9 and params_status='success' and params_country_code = 'IN') l on l.params_unique_event_id = t.params_unique_event_id
+          where params_country_code like '%IN%'
+                and year=2019
+                and month = 4
+                --and month = 4
+                and day = 9
+                and t.params_action_key = 'offline_message'
+
+--select * from messages_sent_to_message_received limit 100
+
+drop table if exists messages_sent;
+select e.*,
+    case when q.params_lightning_unique_message_id is not null then 1 else 0 end      as is_lightning_outgoing_push,
+    case when b.params_lightning_unique_message_id is not null then 1 else 0 end      as is_lightning_outgoing_email,
+    case when a.params_lightning_unique_message_id is not null then 1 else 0 end      as is_lightning_outgoing_sms
+     into temp messages_sent
+        from quijote_event_id e
+  left join (select distinct params_lightning_unique_message_id from spectrum.usercomms_lightning_outgoing_push  where year=2019 and month = 4 and day = 9  and params_status='success' and params_country_code = 'IN') q on q.params_lightning_unique_message_id=e.params_response_unique_message_id_push
+  left join (select distinct params_lightning_unique_message_id from spectrum.usercomms_lightning_outgoing_email where year=2019 and month = 4 and day = 9  and params_status='success' and params_country_code = 'IN') b on b.params_lightning_unique_message_id=e.params_response_unique_message_id_email
+  left join (select distinct params_lightning_unique_message_id from spectrum.usercomms_lightning_outgoing_sms   where year=2019 and month = 4 and day = 9  and params_status='success' and params_country_code = 'IN') a on a.params_lightning_unique_message_id=e.params_response_unique_message_id_sms
+
+drop table if exists messages_sent_status;
+select
+   k.*,
+   l.params_status as status_email
+   --m.params_status as status_sms
+   into temp messages_sent_status
+  from messages_sent k
+      left join (select distinct params_lightning_unique_message_id,params_status from spectrum.usercomms_lightning_tracking_email where year=2019 and month = 4 and day = 9 ) l on l.params_lightning_unique_message_id=k.params_response_unique_message_id_email
+      --left join (select distinct params_lightning_unique_message_id,params_status from spectrum.usercomms_lightning_tracking_sms where year=2019 and month=3 and day=9) m on m.params_lightning_unique_message_id=k.params_response_unique_message_id_sms
+
+drop table if exists messages_sent_to_message_received;
+select
+   t.*,
+   x.date_event_nk,
+   case when x.resultset_id is not null then 1 else 0 end push_show_android,
+   case when y.push_id is not null then 1 else 0 end push_show_ios
+    into temp messages_sent_to_message_received
+   from messages_sent_status t
+      left join (select distinct resultset_id,date_event_nk from ods.panameraolx_asia_hydra_ninja_android_last_month where trackevent = 'push_show' and country_sk='olx|asia|in') x on x.resultset_id = t.params_extras_message_id
+      left join (select distinct push_id,date_event_nk from ods.panameraolx_mea_hydra_ninja_android_last_month where trackevent = 'push_show' and country_sk='olx|mea|pk') y on y.push_id = t.params_extras_message_id
+
+
+select
+  month,
+  day,
+  count(distinct case when params_device_type = 'android' then params_user_id else null end) as cantidad_de_user_id,
+  count(distinct case when is_lightning_outgoing_push=1 and params_device_type = 'android' then params_user_id else null end) as message_sent_push,
+  count(distinct case when push_show_android=1 then params_user_id else null end) as message_received_push,
+  count(distinct case when is_lightning_outgoing_email=1 then params_user_id else null end) as message_sent_email,
+  count(distinct case when status_email in ('hard' , 'soft') then params_user_id else null end) as message_bounced_email,
+  count(distinct case when status_email='opened' then params_user_id else null end) as message_opened_email
+from messages_sent_to_message_received
+  group by 1,2
+  order by 1,2
+limit 1000
+
+select * from messages_sent_to_message_received limit 1000
+
+
+select
+  date_nk,
+  count(distinct user_sk) as dau
+from ods.fact_user_hydra_browsing_activity
+  where
+       country_sk = 'olx|mea|pk' and
+       is_panamera is true and
+       channel_sk in ('mobile_app|android' , 'mobile_app|ios') and
+       date_nk > '2019-03-05'
+  group by 1
+
+---------------------------------------------------------------------
+---------------- PUSH ATTRIBUTION ---------------------------------
+
+drop table if exists dau;
+select
+  date_nk,
+  session_long
+  into temp dau
+   from ods.fact_user_hydra_browsing_activity
+ where
+    is_panamera is true
+    and country_sk = 'olx|asia|in'
+    and channel_sk in ('mobile_app|android')
+    and date_nk >= '2019-04-01'
+group by 1,2
+
+drop table if exists first_session_of_day;
+select
+  session_long,
+  date_event_nk,
+  min(session_long_seq) as min_session_long_seq
+    into temp first_session_of_day
+  from ods.panameraolx_asia_hydra_ninja_android_last_month
+   where
+       country_sk = 'olx|asia|in'
+  group by 1,2
+   order by 1,2
+
+drop table if exists push_show_events;
+select
+  session_long,
+  date_event_nk,
+  session_long_seq
+   into temp push_show_events
+ from ods.panameraolx_asia_hydra_ninja_android_last_month
+    where country_sk = 'olx|asia|in'
+      and trackevent = 'push_show'
+  group by 1,2,3
+
+drop table if exists session_long_on_ods;
+select
+  k.session_long,
+  k.date_event_nk,
+  k.min_session_long_seq,
+  b.session_long_seq,
+  case when b.session_long_seq is not null then 1 else 0 end as push_show_in_first_events
+   into temp session_long_on_ods
+  from first_session_of_day k
+   left join push_show_events b on b.session_long=k.session_long and b.date_event_nk=k.date_event_nk and b.session_long_seq=k.min_session_long_seq
+
+drop table if exists session_long_by_push;
+select
+  session_long,
+  date_event_nk
+  into temp session_long_by_push
+ from session_long_on_ods
+  where push_show_in_first_events = 1
+ group by 1,2
+
+select
+ date_nk,
+ count(distinct m.session_long) as dau,
+ count(distinct case when n.session_long is not null then m.session_long else null end) as dau_by_push
+   from dau m
+  left join session_long_by_push n on m.date_nk=n.date_event_nk and m.session_long=n.session_long
+ group by 1
+
+
+select
+  session_long,
+  date_event_nk,
+  session_long,
+  session_long_seq,
+  session_seq,
+  trackevent,
+  notificationtype
+from ods.panameraolx_mea_hydra_ninja_android_last_month
+  where session_long = '166fd74b755x696b261b' and date_event_nk = '2019-04-15'
+
+
+--------------------------------------------------------------------------
+--------------------------------------------------------------------------
+drop table if exists daus;
+select
+  session_long,
+  date_nk
+   into temp daus
+    from ods.fact_user_hydra_browsing_activity
+  where is_panamera is true
+    and country_sk = 'olx|asia|in'
+    and channel_sk like '%android%'
+    and date_nk >= '2019-04-01'
+ group by 1,2
+
+--select
+--  g.*,
+--  year,month,day,
+--  case when params_user_id is not null then 1 else 0 end as in_quijote_events
+--    into temp daus_in_quijote_incoming
+--   from daus g
+--  left join (select params_user_id,year,month,day from spectrum.usercomms_quijote_incoming_events t where params_country_code='PK' and year=2019 and month in (4,5) group by 1,2,3,4) k on k.params_user_id=g.user_id and extract(year from date_nk)=year and extract(month from date_nk)=month and extract(day from date_nk)=day
+
+--select da
+
+--select
+--  t.*,
+--  year,month,day
+
+--  from daus_in_quijote_incoming t
+--    left join (select params_user_id,year,month,day from spectrum.usercomms_quijote_outgoing_push where params_country_code='PK' and year=2019 and month in (4,5) and params_device_type='android' group by 1,2,3,4 ) k on k.params_user_id=t.user_id and k.year=t.year and k.month=t.month and k.day=t.day
+
+drop table if exists users_received_pushing;
+select
+  session_long,
+  date_event_nk
+   into temp users_received_pushing
+    from ods.panameraolx_asia_hydra_ninja_android_last_month
+  where country_sk = 'olx|asia|in'
+        and trackevent = 'push_show'
+  group by 1,2
+
+drop table if exists table_users_received_pushing;
+select
+  t.*,
+  case when m.session_long is not null then 1 else 0 end as received_push
+  into temp table_users_received_pushing
+   from daus t
+    left join users_received_pushing m on t.session_long=m.session_long and t.date_nk=m.date_event_nk
+
+select
+  date_nk,
+  count(distinct session_long) as dau_android,
+  count(distinct case when received_push=1 then session_long else null end) as users_sending_push
+   from table_users_received_pushing j
+group by 1
+
+
+select
+ distinct select_from,login_method,login_submethod
+  from ods.fact_login_complete
+  where trackevent = 'login_sign_in_complete'
+   and date_event_nk > '2019-02-11'
+    limit 100
+   and
+
+
+select
+ date_nk,
+ sushil_seller_segment,
+ count(distinct user_sk) as qty_user
+  from latam_sandbox.in_power_and_vip_segments
+    where
+       date_nk > '2019-03-01'
+  group by 1,2
+  order by 2,1
+   limit 1000
+
+select * from latam_sandbox.in_power_and_vip_segments limit 1000
+
+
+select * from ods.fact_listings
+ where user_sk = 'olx|asia|in|platform|id|137146201'
+    and listing_net_sk like 'net%'
+ order by date_posted_nk
+limit 500
+
+
+select
+  distinct
+     date_event_nk,
+     trackevent,
+     login_method,
+     login_submethod,
+     flow_step,
+     flow_type,
+     chosen_option,
+     count(distinct session_long) as qty_user
+   from ods.panameraolx_mea_hydra_ninja_android_last_month
+    where
+     trackevent = 'profile_completion_action' and chosen_option='continue' and flow_step='has_picture'
+ group by 1,2,3,4,5,6,7
+----------------------------------------------
+
+-- Dynamic
+WITH verified AS (
+    SELECT session
+from ods.panameraolx_mea_hydra_ninja_web_last_month
+WHERE trackevent = 'myaccount_action' and chosen_option = 'profile_bar' and country_sk = 'olx|mea|za'
+)
+SELECT
+  date_event_nk,
+  COUNT(DISTINCT CASE WHEN trackevent = 'myaccount_action' and chosen_option = 'profile_bar' and country_sk = 'olx|mea|za'  THEN session_long ELSE NULL END) AS profile_completion_show,
+  COUNT(DISTINCT CASE WHEN trackevent = 'profile_completion_action' and chosen_option = 'continue' THEN session_long ELSE NULL END) AS complete_something
+FROM ods.panameraolx_mea_hydra_ninja_web_last_month
+JOIN verified USING (session)
+group by 1
+
+-- Form
+WITH verified AS (
+    SELECT session
+from ods.panameraolx_mea_hydra_ninja_web_last_month
+WHERE trackevent = 'profile_info_edit_show' and country_sk = 'olx|mea|za'
+)
+SELECT
+  date_event_nk,
+  COUNT(DISTINCT CASE WHEN trackevent = 'profile_info_edit_show' and country_sk = 'olx|mea|za'  THEN session_long ELSE NULL END) AS profile_completion_show,
+  COUNT(DISTINCT CASE WHEN trackevent = 'profile_info_edit_action' and chosen_option = 'save' THEN session_long ELSE NULL END) AS complete_something
+FROM ods.panameraolx_mea_hydra_ninja_web_last_month
+JOIN verified USING (session)
+group by 1
+
+
+
+
+
+select
+  date_nk ,
+  count(distinct session_long) as users
+    from ods.fact_user_hydra_browsing_activity
+ where country_sk = 'olx|mea|pk'
+    and is_panamera = TRUE
+    and channel_sk like '%android%'
+    and app_version in ('13.14.01' , '13.14.02' , '13.14.03' , '13.14.04' , '13.14.05' , '13.14.06' , '13.14.07' , '13.14.08' , '13.14.09' ,  '13.14.10' , '13.15.01' , '13.15.02')
+    and date_nk >= '2019-04-01'
+  group by 1
+
+select
+  date_event_nk ,
+  count(distinct session_long) as users
+    from ods.panameraolx_mea_hydra_ninja_android_last_month
+ where country_sk = 'olx|mea|pk'
+    and app_version not in ('13.14.01' , '13.14.02' , '13.14.03' , '13.14.04' , '13.14.05' , '13.14.06' , '13.14.07' , '13.14.08' , '13.14.09' ,  '13.14.10' , '13.15.01' , '13.15.02')
+    and trackevent = 'profile_completion_show'  or (trackevent = 'profile_show' and select_from = 'my_profile')
+  group by 1
+
+
+
+select
+  distinct select_from , origin_nk
+  from ods.panameraolx_mea_hydra_ninja_android_last_month
+ where trackevent = 'profile_show'
+
+
+
+drop table if exists push
+
+
+select
+  distinct
+    resultset_id
+    from ods.panameraolx_mea_hydra_ninja_android_last_month
+       where trackevent =
+
+
+
+drop table if exists quijote_event_id;
+select
+    t.params_unique_event_id,
+    t.params_extras_message_id,
+    t.params_user_id,
+    t.params_action_key,
+    t.params_country_code,
+    t.month,
+    t.day,
+    case when u.params_response_unique_message_id is null then 0 else 1 end as is_in_quijote_outgoing_push,
+    u.params_response_unique_message_id as params_response_unique_message_id_push,
+    u.params_device_type
+   into temp quijote_event_id
+  from spectrum.usercomms_quijote_incoming_events t
+    left join (select distinct params_unique_event_id , params_device_type , params_response_unique_message_id from spectrum.usercomms_quijote_outgoing_push where year=2019 and month = 5 and day in (24,25,26)  and params_status='success' and params_country_code = 'IN' and params_device_type='android') u on u.params_unique_event_id = t.params_unique_event_id
+
+          where params_country_code like '%IN%'
+                and year=2019
+                and month = 5
+                --and month = 4
+                and day = 25
+                and t.params_action_key = 'offline_message'
+
+drop table if exists messages_sent;
+select e.*,
+    case when q.params_lightning_unique_message_id is not null then 1 else 0 end      as is_lightning_outgoing_push
+  into temp messages_sent
+        from quijote_event_id e
+  left join (select distinct params_lightning_unique_message_id from spectrum.usercomms_lightning_outgoing_push where year=2019 and month = 5 and day in (24,25,26) and params_status='success' and params_country_code = 'IN' and params_device_type='android') q on q.params_lightning_unique_message_id=e.params_response_unique_message_id_push
+
+drop table if exists messages_sent_to_message_received;
+select
+   t.*,
+   x.date_event_nk,
+   case when x.resultset_id is not null then 1 else 0 end push_show_android
+  into temp messages_sent_to_message_received
+   from messages_sent t
+      left join (select distinct resultset_id,date_event_nk from ods.panameraolx_asia_hydra_ninja_android_last_month where trackevent = 'push_show' and country_sk='olx|asia|in') x on x.resultset_id = t.params_extras_message_id
+
+drop table if exists devices_india;
+select
+ params_user_id,
+ case when params_device_model like 'Redmi%' or params_device_model like 'vivo%' or params_device_model like 'ONEPLUS%' or params_device_model like 'POCO%' or params_device_model like 'Mi%' then 1 else 0 end as chinese,
+ case when params_device_model like 'SM%' or params_device_model like 'CPH%' or params_device_model like 'ASUS%' or params_device_model like 'RMX%'  then 1 else 0 end as no_chinese
+into temp devices_india
+   from spectrum.hydra_p_olx_android
+    where
+          year=2019
+      and day in (21,22,23,24,25,26)
+      and month=5
+      and params_cc = 'in'
+      and params_device_model is not null
+      and params_user_id is not null
+      and params_v like '%13.14%'
+ group by 1,params_device_model
+
+drop table if exists model_gamma_cellphones;
+select
+    params_user_id,
+    params_device_model,
+    params_device_info_disk_disk_total_space,
+    cast(params_device_info_screen_screen_width as integer) * cast(params_device_info_screen_screen_height as integer) as width_mutiply_height
+  into temp model_gamma_cellphones
+ from spectrum.hydra_p_olx_android
+ WHERE
+   year=2019
+   and month=5
+   and day in (21,22,23,24,25,26)
+   and params_cc = 'in'
+   and params_device_model is not null
+   and params_v like '%13.14%'
+group by 1,2,3,4
+
+drop table if exists tiene_fcm;
+select
+ distinct user_id
+   into temp tiene_fcm
+  from livesync.panamera_device_tokens
+ where livesync_dbname = 'olxin'
+   and device_type = 'android'
+   and device like 'FCM%'
+
+drop table if exists last_dataframe;
+select
+distinct
+  t.params_user_id,
+  params_action_key,
+  params_extras_message_id,
+  params_response_unique_message_id_push,
+  params_country_code,
+  month,
+  day,
+  is_in_quijote_outgoing_push,
+  params_device_type,
+  is_lightning_outgoing_push,
+  date_event_nk,
+  push_show_android,
+  chinese,
+  no_chinese,
+  params_device_model,
+  width_mutiply_height,
+  params_device_info_disk_disk_total_space
+   into temp last_dataframe
+    from messages_sent_to_message_received t
+      inner join devices_india n on n.params_user_id=t.params_user_id
+      inner join model_gamma_cellphones v on v.params_user_id=t.params_user_id
+
+ select
+   v.*,
+   case when t.user_id is not null then 1 else 0 end as tiene_fcm
+     from last_dataframe v
+       left join tiene_fcm t on t.user_id=v.params_user_id
+   order by params_user_id
+
+
+select
+  count(distinct params_extras_message_id) as message_id
+    from messages_sent
+  where day = 25
+
+select
+  date_event_nk,
+  experiment_variant,
+  count(distinct session_long) as users
+   from ods.panameraolx_asia_hydra_ninja_android_last_month
+ where
+    country_sk = 'olx|asia|in'
+  and experiment_variant in ('mandatory_login' , 'non_mandatory_login')
+  and trackevent in ('login_show')
+group by 1,2
+
+
+
+select * from spectrum.hydra_p_olx_android
+  where params_cc = 'in'
+     and year = 2019
+     and month = 5
+     and day = 30
+     and params_device_model is not null
+
+  limit 10
+
+
+
+------------------------------------------------------------
+
+drop table if exists picture_and_name;
+select
+  split_part(user_sk , '|' , 6) as user_id,
+  country_sk,
+  date_event_nk,
+  count(case when trackevent='profile_completion_action' and chosen_option='continue' and flow_step='has_picture' then trackevent else null end) as picture,
+  count(case when trackevent='profile_completion_action' and chosen_option='continue' and flow_step='valid_name' then trackevent else null end) as name
+  into temp picture_and_name
+   from ods.panameraolx_mea_hydra_ninja_android_last_month
+group by 1,2,3
+
+drop table if exists date_changes;
+select
+  user_id,
+  country_sk,
+  min(date_event_nk) as min_date
+   into temp date_changes
+   from picture_and_name
+ where picture!=0 and name!=0
+group by 1,2
+
+
+select
+  *
+   from
+     ods.fact_conversations_daily t
+  inner join date_changes m on m.user_id=split_part(t.seller_sk , '|' , 6) and m.country_sk=t.country_sk
+  inner join date_changes v on v.user_id=split_part(t.buyer_sk , '|' , 6) and m.country_sk=t.country_sk
+
+
+drop table if exists picture_and_name;
+select
+  count(case when trackevent='profile_completion_action' and chosen_option='continue' and flow_step='has_picture' then trackevent else null end) as picture,
+  count(case when trackevent='profile_completion_action' and chosen_option='continue' and flow_step='valid_name' then trackevent else null end) as name
+  into temp picture_and_name
+   from ods.panameraolx_mea_hydra_ninja_android_last_month
+group by 1,2,3
+
+
+
+select
+  date_nk,
+  count(distinct session_long) as dau
+   from ods.fact_user_hydra_browsing_activity
+ where is_panamera = TRUE
+  and country_sk = 'olx|asia|in'
+  and date_nk > '2019-02-11'
+group by 1
+
+
+select
+  * from spectrum.hydra_olxindia_android
+ where params_cc = 'pushRcv'
+
+WITH verified AS (
+    SELECT
+    distinct session
+from ods.panameraolx_asia_hydra_ninja_android_last_month
+WHERE trackevent = 'onboarding_show' and experiment_variant = 'mandatory_login'
+)
+SELECT
+  date_event_nk,
+  COUNT(DISTINCT CASE WHEN trackevent = 'onboarding_show' THEN session_long ELSE NULL END) AS onboarding_show,
+  COUNT(DISTINCT CASE WHEN trackevent = 'view_listings' THEN session_long ELSE NULL END) AS view_listings
+FROM ods.panameraolx_asia_hydra_ninja_android_last_month
+JOIN verified USING (session)
+  where date_event_nk > '2019-05-25'
+group by 1
+
+with active_listers as (select distinct user_sk from ods.fact_user_segments where user_sk like '%olx|asia|in%' and date_nk between '2017-01-01' and '2017-01-31' and user_new_returning_nk = 'new')
+
+
+with  active_listers as (select distinct user_sk from ods.fact_user_segments where user_sk like '%olx|asia|in%' and date_nk between '2017-01-01' and '2017-01-31' and user_new_returning_nk = 'new' ),
+     raw_data as (select count(distinct l.listing_sk) listings,
+        l.user_sk,
+       l.date_posted_nk
+       from ods.fact_listings l
+left join ods.dim_listing_net on ods.dim_listing_net.listing_net_sk = l.listing_net_sk
+     inner join active_listers a on a.user_sk = l.user_sk
+     left join ods.dim_categories cat on cat.category_sk = l.category_sk
+
+where l.country_sk = 'olx|asia|in' and
+ods.dim_listing_net.listing_net_l1_nk = 'net'
+and l.date_posted_nk >= '2017-01-01' and l.date_posted_nk  <= '2018-12-31'
+group by 2,3 )
+
+select * from raw_data
+
+select * from ods.fact_w_users_rfm_matrix limit 100
+
+select
+  origin_nk,
+  count(distinct session_long) as user
+    from ods.panameraolx_asia_hydra_ninja_android_last_month
+      where trackevent = 'login_sign_in_complete'
+      group by 1
+
+
+
+select
+  app_version
+  from ods.panameraolx_mea_hydra_ninja_android_last_3_months
+ where country_sk = 'olx|mea|pk'
+   and chosen_option = 'profile_bar'
+group by 1
+
+
+
+select
+  date_event_nk,
+  error_key,
+  error_origin,
+  error_message,
+  count(distinct session_long) as users
+  from ods.panameraolx_mea_hydra_ninja_android_last_month
+  where trackevent = 'login_errors'
+     and country_sk = 'olx|mea|za'
+group by 1,2,3,4
+
+
+-- marcados como spam
+-- uninstall
+-- unregister
+-- delivery rate por evento
+-- action conversion
+-- time to reply
+-- chat received flujo de
+--
+
+
+
+
+drop table if exists dau_new;
+select
+  date_nk,
+  count(distinct session_long) as new_dau
+   into temp dau_new
+   from ods.fact_user_hydra_browsing_activity
+   --  left join (select session_long,user_sk,date_nk from ods.fact_user_hydra_browsing_activity where user_sk!='unknown' and is_panamera = true and country_sk in ('olx|mea|pk' , 'olx|mea|za' , 'olx|asia|in') and date_nk = '2019-06-11')
+ where
+   is_panamera = true
+    and date_nk >= '2019-05-01'
+    and country_sk in ('olx|asia|in')
+    and user_active_new_returning_nk = 'new'
+group by 1
+order by 1
+
+;drop table if exists new_users_label;
+select
+  date_nk,
+  session_long,
+  user_sk
+   into temp new_users_label
+    from ods.fact_user_hydra_browsing_activity
+  where
+    is_panamera = true
+and country_sk = 'olx|asia|in'
+and user_active_new_returning_nk = 'new'
+ group by 1,2,3
+
+;drop table if exists listingss;
+select
+   date_nk,
+   count(distinct f1.user_sk) as new_user_post_30_days
+  --into temp listingss
+  from ods.fact_listings f1
+    inner join new_users_label f2 on f1.user_sk=f2.user_sk
+    where country_sk = 'olx|asia|in'
+  and listing_net_sk like 'net%'
+  and date_posted_nk >= '2019-05-01'
+  and datediff(days ,date_nk,date_posted_nk) < 30
+  group by 1
+limit 100
+
+select
+  a.* ,
+  b.category_l1_name_en,
+  b.category_l2_name_en
+from ods.fact_listings a
+ left join ods.dim_categories b on a.category_sk=b.category_sk
+where a.country_sk = 'olx|asia|in'
+  and listing_net_sk like 'net%' limit 100
+
+select
+  f1.date_nk,
+  f1.new_dau,
+  f2.new_repliers
+   from dau_new f1
+  inner join repliess f2 on f1.date_nk=f2.date_sent_nk
+order by 1
+
+
+
+WITH verified AS (
+    SELECT session
+from ods.panameraolx_mea_hydra_ninja_android_last_month
+WHERE trackevent = 'profile_completion_show' and origin_nk = 'on_boarding'
+)
+SELECT
+  date_event_nk,
+  COUNT(DISTINCT CASE WHEN trackevent = 'profile_completion_show' and origin_nk = 'on_boarding' THEN session_long ELSE NULL END) AS profile_completion_show,
+  COUNT(DISTINCT CASE WHEN trackevent = 'profile_completion_action' and chosen_option = 'continue' and flow_step = 'has_about' THEN session_long ELSE NULL END) AS has_about,
+  COUNT(DISTINCT CASE WHEN trackevent = 'profile_completion_action' and chosen_option = 'continue' and flow_step = 'phone_validation' THEN session_long ELSE NULL END) AS phone,
+  COUNT(DISTINCT CASE WHEN trackevent = 'profile_completion_action' and chosen_option = 'continue' and flow_step = 'email_validation' THEN session_long ELSE NULL END) AS email,
+  COUNT(DISTINCT CASE WHEN trackevent = 'profile_completion_action' and chosen_option in ('google' , 'facebook') and flow_step = 'has_picture' THEN session_long ELSE NULL END) AS has_picture,
+  COUNT(DISTINCT CASE WHEN trackevent = 'profile_completion_action' and chosen_option = 'continue' and flow_step = 'valid_name' THEN session_long ELSE NULL END) AS valid_name,
+  COUNT(DISTINCT CASE WHEN trackevent = 'profile_completion_action' and chosen_option = 'continue' and flow_step = 'valid_social_account' THEN session_long ELSE NULL END) AS social_account
+FROM ods.panameraolx_mea_hydra_ninja_android_last_month
+JOIN verified USING (session)
+group by 1
+;
+
+
+select
+  date_event_nk,
+  count(distinct session_long)
+   from ods.panameraolx_mea_hydra_ninja_android_last_month
+ where
+   trackevent = 'profile_completion_action'
+      and origin_nk='on_boarding'
+ group by 1
+
+-----
+
+select
+  *
+from ods.panameraolx_mea_hydra_ninja_android_last_month
+  where
+    trackevent = 'profile_completion_action'
+   and origin_nk = 'on_boarding'
+   and chosen_option = 'facebook'
+limit 100
+
+select
+  trackevent,
+  chosen_option,
+  origin_nk,
+  flow_type,
+  flow_step,
+    from ods.panameraolx_asia_hydra_ninja_android_last_month
+ where
+   trackevent = 'profile_completion_action'
+group by 1,2,3,4,5
+
+-----------------------------------------------------------------
+
+drop table if exists starters;
+select
+  session_long,
+  date_event_nk
+  into temp table starters
+   from ods.panameraolx_asia_hydra_ninja_android_last_month
+  where
+    trackevent='profile_completion_show'
+ and origin_nk = 'on_boarding'
+group by 1,2
+
+drop table if exists name;
+select
+  session_long,
+  date_event_nk
+  into temp table name
+   from ods.panameraolx_asia_hydra_ninja_android_last_month
+  where
+    trackevent='profile_completion_action'
+ and origin_nk = 'on_boarding'
+ and chosen_option = 'continue'
+ and flow_step = 'valid_name'
+group by 1,2
+
+drop table if exists about;
+select
+  session_long,
+  date_event_nk
+  into temp table about
+   from ods.panameraolx_asia_hydra_ninja_android_last_month
+  where
+    trackevent='profile_completion_action'
+ and origin_nk = 'on_boarding'
+ and chosen_option = 'continue'
+ and flow_step = 'has_about'
+group by 1,2
+
+drop table if exists picture;
+select
+  session_long,
+  date_event_nk
+  into temp table picture
+   from ods.panameraolx_asia_hydra_ninja_android_last_month
+  where
+    trackevent='profile_completion_action'
+ and origin_nk = 'on_boarding'
+ and chosen_option = 'continue'
+ and flow_step = 'has_picture'
+group by 1,2
+
+drop table if exists picture;
+select
+  session_long,
+  date_event_nk
+  into temp table picture
+   from ods.panameraolx_asia_hydra_ninja_android_last_month
+  where
+    trackevent='profile_completion_action'
+ and origin_nk = 'on_boarding'
+ and chosen_option = 'continue'
+ and flow_step = 'has_picture'
+group by 1,2
+
+drop table if exists social_account;
+select
+  session_long,
+  date_event_nk
+  into temp table social_account
+   from ods.panameraolx_asia_hydra_ninja_android_last_month
+  where
+    trackevent='profile_completion_action'
+ and origin_nk = 'on_boarding'
+ and chosen_option = 'continue'
+ and flow_step = 'valid_social_account'
+group by 1,2
+
+drop table if exists email;
+select
+  session_long,
+  date_event_nk
+  into temp table email
+   from ods.panameraolx_asia_hydra_ninja_android_last_month
+  where
+    trackevent='profile_completion_action'
+ and origin_nk = 'on_boarding'
+ and chosen_option = 'continue'
+ and flow_step = 'email_validation'
+group by 1,2
+
+
+drop table if exists phone;
+select
+  session_long,
+  date_event_nk
+  into temp table phone
+   from ods.panameraolx_asia_hydra_ninja_android_last_month
+  where
+    trackevent='profile_completion_action'
+ and origin_nk = 'on_boarding'
+ and chosen_option = 'continue'
+ and flow_step = 'phone_validation'
+group by 1,2
+
+drop table if exists dataframes_all;
+select
+  a.session_long,
+  case when b.session_long is null then 0 else 1 end as name,
+  case when c.session_long is null then 0 else 1 end as picture,
+  case when d.session_long is null then 0 else 1 end as social_account,
+  case when e.session_long is null then 0 else 1 end as email,
+  case when f.session_long is null then 0 else 1 end as phone
+  into temp table dataframes_all
+  from starters a
+   left join name b on a.session_long=b.session_long and a.date_event_nk=b.date_event_nk
+   left join picture c on a.session_long=c.session_long and a.date_event_nk=c.date_event_nk
+   left join social_account d on a.session_long=d.session_long and a.date_event_nk=d.date_event_nk
+   left join email e on a.session_long=e.session_long and a.date_event_nk=e.date_event_nk
+   left join phone f on a.session_long=f.session_long and a.date_event_nk=f.date_event_nk
+group by 1,2,3,4,5,6
+
+select
+  sum(name) as name,
+  sum(picture) as picture,
+  sum(social_account) as social_account,
+  sum(email) as email,
+  sum(phone) as phone,
+  count(distinct session_long) as users
+    from dataframes_all
+
+
+-- returnings
+
+drop table if exists starters2;
+select
+  session_long,
+  date_event_nk
+  into temp table starters2
+   from ods.panameraolx_asia_hydra_ninja_android_last_month
+  where
+    trackevent='profile_completion_show'
+ and origin_nk = 'profile_bar'
+group by 1,2
+
+drop table if exists name2;
+select
+  session_long,
+  date_event_nk
+  into temp table name2
+   from ods.panameraolx_asia_hydra_ninja_android_last_month
+  where
+    trackevent='profile_completion_action'
+ and origin_nk = 'profile_bar'
+ and chosen_option = 'continue'
+ and flow_step = 'valid_name'
+group by 1,2
+
+drop table if exists about2;
+select
+  session_long,
+  date_event_nk
+  into temp table about2
+   from ods.panameraolx_asia_hydra_ninja_android_last_month
+  where
+    trackevent='profile_completion_action'
+ and origin_nk = 'profile_bar'
+ and chosen_option = 'continue'
+ and flow_step = 'has_about'
+group by 1,2
+
+drop table if exists picture2;
+select
+  session_long,
+  date_event_nk
+  into temp table picture2
+   from ods.panameraolx_asia_hydra_ninja_android_last_month
+  where
+    trackevent='profile_completion_action'
+ and origin_nk = 'profile_bar'
+ and chosen_option = 'continue'
+ and flow_step = 'has_picture'
+group by 1,2
+
+drop table if exists social_account2;
+select
+  session_long,
+  date_event_nk
+  into temp table social_account2
+   from ods.panameraolx_asia_hydra_ninja_android_last_month
+  where
+    trackevent='profile_completion_action'
+ and origin_nk = 'profile_bar'
+ and chosen_option = 'continue'
+ and flow_step = 'valid_social_account'
+group by 1,2
+
+drop table if exists email2;
+select
+  session_long,
+  date_event_nk
+  into temp table email2
+   from ods.panameraolx_asia_hydra_ninja_android_last_month
+  where
+    trackevent='profile_completion_action'
+ and origin_nk = 'profile_bar'
+ and chosen_option = 'continue'
+ and flow_step = 'email_validation'
+group by 1,2
+
+
+drop table if exists phone2;
+select
+  session_long,
+  date_event_nk
+  into temp table phone2
+   from ods.panameraolx_asia_hydra_ninja_android_last_month
+  where
+    trackevent='profile_completion_action'
+ and origin_nk = 'profile_bar'
+ and chosen_option = 'continue'
+ and flow_step = 'phone_validation'
+group by 1,2
+
+drop table if exists dataframes_all2;
+select
+  a.session_long,
+  case when b.session_long is null then 0 else 1 end as name,
+  case when c.session_long is null then 0 else 1 end as picture,
+  case when d.session_long is null then 0 else 1 end as social_account,
+  case when e.session_long is null then 0 else 1 end as email,
+  case when f.session_long is null then 0 else 1 end as phone
+  into temp table dataframes_all2
+  from starters2 a
+   left join name2 b on a.session_long=b.session_long and a.date_event_nk=b.date_event_nk
+   left join picture2 c on a.session_long=c.session_long and a.date_event_nk=c.date_event_nk
+   left join social_account2 d on a.session_long=d.session_long and a.date_event_nk=d.date_event_nk
+   left join email2 e on a.session_long=e.session_long and a.date_event_nk=e.date_event_nk
+   left join phone2 f on a.session_long=f.session_long and a.date_event_nk=f.date_event_nk
+group by 1,2,3,4,5,6
+
+select
+  sum(name) as name,
+  sum(picture) as picture,
+  sum(social_account) as social_account,
+  sum(email) as email,
+  sum(phone) as phone,
+  count(distinct session_long) as users
+    from dataframes_all2
+
+
+
+
+

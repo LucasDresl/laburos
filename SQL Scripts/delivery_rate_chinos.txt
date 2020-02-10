@@ -1,0 +1,829 @@
+
+select
+  distinct
+  message_id
+  into temp offline_messages
+    from hydra.panameraolx_asia_ninja_chat_201905
+            where to_date(TIMESTAMP 'epoch' + server_date * INTERVAL '1 Second', 'YYYY-MM-DD') in ('2019-05-22','2019-05-21' , '2019-05-23')
+                and event_name = 'offlineNotification' and status='success')
+      limit 100
+
+drop table if exists quijote_event_id;
+select
+    t.params_unique_event_id,
+    t.params_extras_message_id,
+    t.params_user_id,
+    t.params_action_key,
+    t.params_country_code,
+    t.month,
+    t.day,
+    case when u.params_response_unique_message_id is null then 0 else 1 end as is_in_quijote_outgoing_push,
+    u.params_response_unique_message_id as params_response_unique_message_id_push,
+    u.params_device_type
+    --case when r.params_response_unique_message_id is null then 0 else 1 end as is_in_quijote_outgoing_email,
+    --r.params_response_unique_message_id as params_response_unique_message_id_email,
+    --case when l.params_response_unique_message_id is null then 0 else 1 end as is_in_quijote_outgoing_sms,
+    --l.params_response_unique_message_id as params_response_unique_message_id_sms
+   into temp quijote_event_id
+  from spectrum.usercomms_quijote_incoming_events t
+    left join (select distinct params_unique_event_id , params_device_type , params_response_unique_message_id from spectrum.usercomms_quijote_outgoing_push where year=2019 and month = 6 and day in (1,2,3)  and params_status='success' and params_country_code = 'IN' and params_device_type='android') u on u.params_unique_event_id = t.params_unique_event_id
+    --left join (select distinct params_unique_event_id , params_response_unique_message_id from spectrum.usercomms_quijote_outgoing_email where year=2019 and month = 5 and day in (21,22,23) and params_status='success' and params_country_code = 'IN') r on r.params_unique_event_id = t.params_unique_event_id
+    --left join (select distinct params_unique_event_id , params_response_unique_message_id from spectrum.usercomms_quijote_outgoing_sms where year=2019 and month = 5 and day in (21,22,23) and params_status='success' and params_country_code = 'IN') l on l.params_unique_event_id = t.params_unique_event_id
+          where params_country_code like '%IN%'
+                and year=2019
+                and month = 6
+                --and month = 4
+                and day = 2
+                and t.params_action_key = 'offline_message'
+
+
+drop table if exists messages_sent;
+select e.*,
+    case when q.params_lightning_unique_message_id is not null then 1 else 0 end      as is_lightning_outgoing_push
+  --  case when b.params_lightning_unique_message_id is not null then 1 else 0 end      as is_lightning_outgoing_email,
+  --  case when a.params_lightning_unique_message_id is not null then 1 else 0 end      as is_lightning_outgoing_sms
+     into temp messages_sent
+        from quijote_event_id e
+  left join (select distinct params_lightning_unique_message_id from spectrum.usercomms_lightning_outgoing_push where year=2019 and month = 6 and day in (1,2,3) and params_status='success' and params_country_code = 'IN' and params_device_type='android') q on q.params_lightning_unique_message_id=e.params_response_unique_message_id_push
+  --left join (select distinct params_lightning_unique_message_id from spectrum.usercomms_lightning_outgoing_email where year=2019 and month = 5 and day in (21,22,23) and params_status='success' and params_country_code = 'IN') b on b.params_lightning_unique_message_id=e.params_response_unique_message_id_email
+  --left join (select distinct params_lightning_unique_message_id from spectrum.usercomms_lightning_outgoing_sms   where year=2019 and month = 5 and day in (21,22,23)  and params_status='success' and params_country_code = 'IN') a on a.params_lightning_unique_message_id=e.params_response_unique_message_id_sms
+
+--drop table if exists messages_sent_status;
+--select
+--   k.*,
+--   l.params_status as status_email
+   --m.params_status as status_sms
+--   into temp messages_sent_status
+--  from messages_sent k
+--      left join (select distinct params_lightning_unique_message_id,params_status from spectrum.usercomms_lightning_tracking_email where year=2019 and month = 5 and day in (21,22,23) ) l on l.params_lightning_unique_message_id=k.params_response_unique_message_id_email
+      --left join (select distinct params_lightning_unique_message_id,params_status from spectrum.usercomms_lightning_tracking_sms where year=2019 and month=3 and day=9) m on m.params_lightning_unique_message_id=k.params_response_unique_message_id_sms
+
+select
+  distinct
+    params_status,params_provider
+      from spectrum.usercomms_lightning_tracking_sms
+   where
+     year=2019
+    and month=5
+    and day=22
+    and hour=22
+ limit 100
+
+drop table if exists messages_sent_to_message_received;
+select
+   t.*,
+   x.date_event_nk,
+   case when x.resultset_id is not null then 1 else 0 end push_show_android
+    into temp messages_sent_to_message_received
+   from messages_sent t
+      left join (select distinct resultset_id,date_event_nk from ods.panameraolx_asia_hydra_ninja_android_last_month where trackevent = 'push_show' and country_sk='olx|asia|in') x on x.resultset_id = t.params_extras_message_id
+
+--select
+--  count(distinct case when is_in_quijote_outgoing_push=1 and params_device_type='android' then params_response_unique_message_id_push else null end) as outgoing_push,
+--  count(distinct case when is_lightning_outgoing_push=1 and params_device_type='android' then params_response_unique_message_id_push else null end) as Lincoming_push
+--from messages_sent_to_message_received
+--select * from messages_sent_to_message_received limit 100
+select
+  *
+    from messages_sent_to_message_received t
+      inner join model_gamma_cellphones n on n.params_user_id=t.params_user_id
+limit 100
+
+drop table if exists devices_india;
+select
+ params_user_id,
+ params_device_info_model_device_brand
+    into temp devices_india
+   from spectrum.hydra_p_olx_android
+    where
+          year=2019
+      and day=2
+      and month=6
+      and params_cc = 'in'
+      and params_device_info_model_device_brand is not null
+      and params_user_id is not null
+ group by 1,2
+
+drop table if exists gamma_cellphone;
+select
+  cast(params_device_info_screen_screen_width as integer) * cast(params_device_info_screen_screen_height as integer) as width_mutiply_height,
+  params_device_info_disk_disk_total_space,
+  count(distinct params_user_id) as user_id
+ from spectrum.hydra_p_olx_android
+ WHERE
+   year=2019
+   and month=6
+   and day in (22,23)
+   and params_cc = 'in'
+group by 1,2
+
+drop table if exists model_gamma_cellphones;
+select
+    params_user_id,
+    params_device_info_model_device_brand,
+    params_device_info_disk_disk_total_space,
+    params_device_info_model_device_os_release,
+    params_device_info_model_device_os_version,
+    cast(params_device_info_screen_screen_width as integer) * cast(params_device_info_screen_screen_height as integer) as width_mutiply_height
+
+  into temp model_gamma_cellphones
+ from spectrum.hydra_p_olx_android
+ WHERE
+   year=2019
+   and month=6
+   and day =2
+   and params_cc = 'in'
+   and params_device_info_model_device_brand is not null
+group by 1,2,3,4,5,6
+
+
+
+drop table if exists calidad;
+select
+  split_part(seller_sk , '|' ,6) as seller,
+  m.*,
+  count(case when seconds_to_1st_response is null then conversation_nk else null end) as no_contestadas,
+  count(case when seconds_to_1st_response is not null then conversation_nk else null end) as contestadas
+   into temp calidad
+   from ods.fact_conversations_daily t
+      inner join model_gamma_cellphones m on m.params_user_id=split_part(seller_sk , '|' ,6)
+     where
+       country_sk='olx|asia|in'
+  and  msg_num_in_conv=1
+  and conv_init_by_buyer=1
+  and date_sent_1st_msg_nk='2019-05-22'
+   group by 1,2,3,4,5
+
+select
+  *
+    from calidad t
+      inner join devices_india m on m.params_user_id=t.seller
+
+
+drop table if exists cantidad_de_session_longs;
+select
+  user_nk,
+  count(distinct session_long) as qty_of_session_long
+  into temp table cantidad_de_session_longs
+    from ods.fact_user_hydra_browsing_activity
+       where
+         is_panamera = true
+     and country_sk='olx|asia|in'
+ group by 1
+
+drop table if exists active_listings;
+select
+  external_id,
+  count(distinct id) as active_listings
+ into temp table active_listings
+     from livesync.panamera_ads
+    where status='active'
+group by 1
+
+--------------------------------------- DIRECTO LIGHTNING OUTGOING
+drop table if exists devices_india;
+select
+ params_user_id,
+ case when params_device_model like 'Redmi%' or params_device_model like 'vivo%' or params_device_model like 'ONEPLUS%' or params_device_model like 'POCO%' or params_device_model like 'Mi%' then 1 else 0 end as chinese,
+ case when params_device_model like 'SM%' or params_device_model like 'CPH%' or params_device_model like 'ASUS%' or params_device_model like 'RMX%'  then 1 else 0 end as no_chinese
+    into temp devices_india
+   from spectrum.hydra_p_olx_android
+    where
+          year=2019
+      and day=22
+      and month=5
+      and params_cc = 'in'
+      and params_device_model is not null
+      and params_user_id is not null
+ group by 1,params_device_model
+
+drop table if exists sending_push;
+select
+  params_user_id,
+  params_push_type,
+  case when q.params_lightning_unique_message_id is not null then 1 else 0 end send_push
+   into temp sending_push
+   from spectrum.usercomms_quijote_outgoing_push e
+      left join (select distinct params_lightning_unique_message_id from spectrum.usercomms_lightning_outgoing_push  where year=2019 and month = 5 and day = 22  and params_status='success' and params_country_code = 'IN') q on q.params_lightning_unique_message_id=e.params_response_unique_message_id
+     where params_country_code like '%IN%'
+                and year=2019
+                and month = 5
+                --and month = 4
+                and day = 22
+                and params_device_type = 'android'
+                and params_status='success'
+
+drop table if exists received_push_show;
+select
+   t.*,
+   x.date_event_nk,
+   case when x.user_nk is not null then 1 else 0 end push_show_android
+    into temp received_push_show
+   from sending_push t
+      left join (select distinct user_nk,date_event_nk from ods.panameraolx_asia_hydra_ninja_android_last_month where trackevent = 'push_show' and country_sk='olx|asia|in') x on x.user_nk = t.params_user_id and extract(day from x.date_event_nk)=22
+
+
+select
+  *
+   from received_push_show o
+    inner join devices_india t on t.params_user_id=o.params_user_id
+
+drop table if exists tiene_fcm;
+select
+ distinct user_id
+  into temp tiene_fcm
+  from livesync.panamera_device_tokens
+ where livesync_dbname = 'olxin'
+   and device_type = 'android'
+   and device like 'FCM%'
+
+
+
+select
+  params_device_model,
+  count(distinct params_user_id) as users
+   from spectrum.hydra_p_olx_android
+ where
+   params_device_model is not null
+    and
+      year=2019
+      and day in (22,23,24,25,26,27,28)
+      and month=5
+      and params_cc = 'in'
+      and params_device_model is not null
+ group by 1
+order by 2 desc
+
+
+drop table if exists devices_model;
+select
+  distinct
+  params_user_id,
+   CASE
+   when params_device_model like '%ASUS%' then 'Asus'
+   when params_device_model in ('LLD-AL10' , 'BND-AL10' , 'JSN-L42' , 'AUM-AL20' , 'RNE-L22') then 'Huawei'
+   when params_device_model like '%Lenovo%' then 'Lenovo'
+   when params_device_model like '%Moto%' or params_device_model like 'moto%' or params_device_model = 'XT1706' then 'Motorola'
+   when params_device_model like 'Nokia%' or params_device_model='TA-1021' then 'Nokia'
+   when params_device_model like 'ONEPLUS%' then 'Oneplus'
+   when params_device_model like 'CPH%' or params_device_model like 'RMX%' or params_device_model like '%A1601%' or params_device_model like '%A37f%' or params_device_model = 'A33f' then 'Oppo'
+   when params_device_model like 'SM-%' then 'Samsung'
+   when params_device_model like 'vivo%' then 'Vivo'
+   when params_device_model like 'Redmi%' or params_device_model like 'Mi%' or params_device_model like 'POCO%' or params_device_model like 'MI MAX%' then 'Xiaomi'
+   when params_device_model in ('LLD-AL20','COR-AL00','BLN-L22') then 'Honor'
+      else
+     params_device_model end as params_device_model
+   into temp devices_model
+ from spectrum.hydra_p_olx_android
+ where
+   params_device_model is not null
+    and
+      year=2019
+      and day in (22,23,24,25,26,27,28)
+      and month=5
+      and params_cc = 'in'
+      and params_device_model is not null
+
+
+select
+  params_device_model,
+  count(distinct params_user_id) as user_id
+    from devices_model
+ group by 1
+order by 2 desc
+
+
+
+
+select * from spectrum.hydra_p_olx_android
+where params_device_model is not null
+    and
+      year=2019
+      and day in (28)
+      and month=5
+      and params_cc = 'in'
+      and params_device_model is not null
+
+limit 10
+
+
+
+
+
+-----------------------------
+
+select
+  t.params_unique_event_id,
+  t.params_extras_message_id,
+  u.params_response_unique_message_id_push
+   from spectrum.usercomms_quijote_incoming_events t
+     left join (select params_unique_event_id , params_response_unique_message_id params_response_unique_message_id_push from spectrum.usercomms_quijote_outgoing_push where params_country_code='IN' and params_device_type='android') u on u.params_unique_event_id=t.params_unique_event_id
+ where
+   params_extras_message_id = '0001e76d-edc3-45a3-9e48-6f8c7c6e550d'
+ and params_country_code = 'IN'
+
+
+select
+  *
+from ods.panameraolx_mea_hydra_ninja_android_last_month
+ where trackevent = 'push_show'
+  and country_sk = 'olx|asia|in'
+  and resultset_id = '0001e76d-edc3-45a3-9e48-6f8c7c6e550d'
+
+
+select
+  *
+   from spectrum.usercomms_quijote_incoming_events
+ limit 100
+
+
+select
+  params_device_model,
+  count(distinct params_user_id) as qty_user_id
+    from spectrum.hydra_p_olx_android
+   where params_device_model is not null
+      and year=2019
+      and day=25
+      and month=5
+      and params_cc = 'in'
+      and params_user_id is not null
+ group by 1
+order by 2 desc
+
+
+select
+  distinct
+    date_event_nk,
+    trackevent,
+    login_method,
+    origin_nk,
+    login_submethod,
+    chosen_option,
+    flow_step,
+    flow_type
+  from ods.panameraolx_mea_hydra_ninja_android_last_month
+    where trackevent = 'verify_complete'
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+drop table if exists calidad;
+select
+  split_part(seller_sk , '|' ,6) as seller,
+  count(case when seconds_to_1st_response is null then conversation_nk else null end) as no_contestadas,
+  count(case when seconds_to_1st_response is not null then conversation_nk else null end) as contestadas
+   into temp table calidad
+   from ods.fact_conversations_daily t
+     where
+       country_sk='olx|asia|in'
+  and  msg_num_in_conv=1
+  and conv_init_by_buyer=1
+  and date_sent_1st_msg_nk='2019-06-02'
+   group by 1
+
+
+
+;drop table if exists model_gamma_cellphones;
+select
+    params_user_id,
+    params_device_info_model_device_brand,
+    params_device_info_disk_disk_total_space,
+    params_device_info_model_device_os_release,
+    params_device_info_model_device_os_version,
+    cast(params_device_info_screen_screen_width as integer) * cast(params_device_info_screen_screen_height as integer) as width_mutiply_height
+
+  into temp table model_gamma_cellphones
+ from spectrum.hydra_p_olx_android
+ WHERE
+   year=2019
+   and month=6
+   and day in (1,2,3)
+   and params_cc = 'in'
+   and params_device_info_model_device_brand is not null
+group by 1,2,3,4,5,6
+
+
+;drop table if exists cantidad_de_session_longs;
+select
+  split_part(user_sk , '|' ,6) as user_nk,
+  count(distinct session_long) as qty_of_session_long
+  into temp table cantidad_de_session_longs
+    from ods.fact_user_hydra_browsing_activity
+       where
+         is_panamera = true
+     and country_sk='olx|asia|in'
+ group by 1
+
+
+
+;drop table if exists active_listings;
+select
+  external_id,
+  count(distinct id) as active_listings
+ into temp table active_listings
+     from livesync.panamera_ads
+    where status='active'
+       and livesync_dbname='olxin'
+group by 1;
+
+
+select
+  *
+   from calidad t
+      inner join model_gamma_cellphones m on m.params_user_id=t.seller
+      inner join cantidad_de_session_longs j on j.user_nk=t.seller
+limit 100
+
+
+select
+  distinct
+   params_device_info_model_device_os,
+   count(*)
+from spectrum.hydra_p_olx_android
+ where params_cc = 'in'
+   and params_en = 'app_open'
+   and year=2019
+   and month=6
+   and day=2
+   and hour=22
+group by 1
+order by 2 desc
+
+
+select * from spectrum.usercomms_quijote_incoming_events
+ where
+    year=2019
+   and month=6
+   and day=2
+   and hour=5
+   and params_country_code = 'IN'
+   and params_action_key like '%offline%'
+ limit 100
+
+
+select
+  *
+  from spectrum.hydra_p_olx_android
+ where
+    year=2019
+   and month=6
+   and day=2
+   and hour=5
+   and params_cc = 'in'
+   and params_en in ('push_show' , 'pushRcv')
+limit 100
+
+
+
+select
+  *
+   from ods.panameraolx_asia_hydra_ninja_android_last_month
+where trackevent in ('push_show')
+
+
+
+select
+  *
+from ods.fact_w_users_rfm_matrix
+where week_nk='201922'
+  and user_sk = 'olx|asia|in|platform|id|100000001'
+order by user_sk,week_nk
+ limit 100
+
+
+
+drop table if exists quijote_event_id;
+select
+    t.params_unique_event_id,
+    t.params_extras_message_id,
+    t.params_user_id,
+    t.params_action_key,
+    t.params_country_code,
+    t.month,
+    t.day,
+    case when u.params_response_unique_message_id is null then 0 else 1 end as is_in_quijote_outgoing_push,
+    u.params_response_unique_message_id as params_response_unique_message_id_push,
+    u.params_device_type
+   into temp table quijote_event_id
+  from spectrum.usercomms_quijote_incoming_events t
+    left join (select distinct params_unique_event_id , params_device_type , params_response_unique_message_id from spectrum.usercomms_quijote_outgoing_push where year=2019 and month = 6 and day in (1,2,3)  and params_status='success' and params_country_code = 'IN' and params_device_type='android') u on u.params_unique_event_id = t.params_unique_event_id
+          where params_country_code like '%IN%'
+                and year=2019
+                and month = 6
+                --and month = 4
+                and day = 2
+                and t.params_action_key = 'offline_message'
+
+drop table if exists session_long;
+select
+  split_part(user_sk , '|' ,6) as user_id,
+  session_long
+   into temp table session_long
+    from ods.fact_user_hydra_browsing_activity
+   where country_sk='olx|asia|in'
+  and is_panamera = true
+  and date_nk > '2019-02-11'
+  and channel_sk like '%android%'
+group by 1,2
+
+
+drop table if exists messages_sent
+select e.*,
+    case when q.params_lightning_unique_message_id is not null then 1 else 0 end      as is_lightning_outgoing_push
+
+     into temp table messages_sent
+        from quijote_event_id e
+  left join (select distinct params_lightning_unique_message_id from spectrum.usercomms_lightning_outgoing_push where year=2019 and month = 6 and day in (1,2,3) and params_status='success' and params_country_code = 'IN' and params_device_type='android') q on q.params_lightning_unique_message_id=e.params_response_unique_message_id_push
+
+
+drop table if exists messages_sent_to_message_received
+select
+   t.*,
+   x.date_event_nk,
+   x.session_long,
+   case when x.resultset_id is not null then 1 else 0 end push_show_android
+    into temp table messages_sent_to_message_received
+   from messages_sent t
+      left join (select distinct resultset_id,date_event_nk,session_long from ods.panameraolx_asia_hydra_ninja_android_last_month where trackevent = 'push_show' and country_sk='olx|asia|in' and date_event_nk between '2019-06-01' and '2019-06-04') x on x.resultset_id = t.params_extras_message_id
+
+select
+  *
+   into temp final
+   from messages_sent_to_message_received
+order by params_extras_message_id
+limit 100
+
+
+
+------------------------------------------ Intento a nivel session long ----------------------------
+
+
+drop table if exists quijote_event_id;
+select
+    t.params_unique_event_id,
+    t.params_extras_message_id,
+    t.params_user_id,
+    t.params_action_key,
+    t.params_country_code,
+    t.month,
+    t.day,
+    case when u.params_response_unique_message_id is null then 0 else 1 end as is_in_quijote_outgoing_push,
+    u.params_response_unique_message_id as params_response_unique_message_id_push,
+    u.params_device_type
+   into temp table quijote_event_id
+  from spectrum.usercomms_quijote_incoming_events t
+    left join (select distinct params_unique_event_id , params_device_type , params_response_unique_message_id from spectrum.usercomms_quijote_outgoing_push where year=2019 and month = 6 and day in (1,2,3)  and params_status='success' and params_country_code = 'IN' and params_device_type='android') u on u.params_unique_event_id = t.params_unique_event_id
+          where params_country_code like '%IN%'
+                and year=2019
+                and month = 6
+                --and month = 4
+                and day = 2
+                and t.params_action_key = 'offline_message'
+
+
+drop table if exists messages_sent
+select
+    e.*,
+    case when q.params_lightning_unique_message_id is not null then 1 else 0 end      as is_lightning_outgoing_push
+     into temp table messages_sent
+        from quijote_event_id e
+  left join (select distinct params_lightning_unique_message_id from spectrum.usercomms_lightning_outgoing_push where year=2019 and month = 6 and day in (1,2,3) and params_status='success' and params_country_code = 'IN' and params_device_type='android') q on q.params_lightning_unique_message_id=e.params_response_unique_message_id_push
+
+drop table if exists messages_sent_to_message_received
+select
+   t.*,
+   case when x.resultset_id is not null then 1 else 0 end push_show_android
+    into temp table messages_sent_to_message_received
+   from messages_sent t
+      left join (select distinct resultset_id from ods.panameraolx_asia_hydra_ninja_android_last_month where trackevent = 'push_show' and country_sk='olx|asia|in' and date_event_nk between '2019-06-01' and '2019-06-04') x on x.resultset_id = t.params_extras_message_id
+
+
+drop table if exists model_gamma_cellphones;
+select
+    params_user_id,
+    params_device_info_model_device_brand,
+    params_device_info_disk_disk_total_space,
+    params_device_info_model_device_os_release,
+    params_device_info_model_device_os_version,
+    cast(params_device_info_screen_screen_width as integer) * cast(params_device_info_screen_screen_height as integer) as width_mutiply_height
+
+  into temp  model_gamma_cellphones
+ from spectrum.hydra_p_olx_android
+ WHERE
+   year=2019
+   and month=6
+   and day in (1,2,3)
+   and params_cc = 'in'
+   and params_device_info_model_device_brand is not null
+group by 1,2,3,4,5,6
+
+
+select
+  *
+  from messages_sent_to_message_received t
+     left join model_gamma_cellphones n on n.params_user_id=t.params_user_id
+limit 100
+
+
+
+----------------------------------------------------------------------------------------
+----------------------------------------------------------------------------------------
+drop table if exists quijote_event_id;
+select
+    t.params_unique_event_id,
+    t.params_extras_message_id,
+    t.params_user_id,
+    t.params_action_key,
+    t.params_country_code,
+    t.month,
+    t.day,
+    case when u.params_response_unique_message_id is null then 0 else 1 end as is_in_quijote_outgoing_push,
+    u.params_response_unique_message_id as params_response_unique_message_id_push,
+    u.params_device_type
+   into temp table quijote_event_id
+  from spectrum.usercomms_quijote_incoming_events t
+    left join (select distinct params_unique_event_id , params_device_type , params_response_unique_message_id from spectrum.usercomms_quijote_outgoing_push where year=2019 and month = 6 and day in (1,2,3)  and params_status='success' and params_country_code = 'IN' and params_device_type='android') u on u.params_unique_event_id = t.params_unique_event_id
+          where params_country_code like '%IN%'
+                and year=2019
+                and month = 6
+                --and month = 4
+                and day = 2
+                and t.params_action_key = 'offline_message'
+
+
+;drop table if exists messages_sent;
+select
+    e.*,
+    case when q.params_lightning_unique_message_id is not null then 1 else 0 end      as is_lightning_outgoing_push
+     into temp table messages_sent
+        from quijote_event_id e
+  left join (select distinct params_lightning_unique_message_id from spectrum.usercomms_lightning_outgoing_push where year=2019 and month = 6 and day in (1,2,3) and params_status='success' and params_country_code = 'IN' and params_device_type='android') q on q.params_lightning_unique_message_id=e.params_response_unique_message_id_push
+
+;drop table if exists messages_sent_to_message_received;
+select
+   t.*,
+   case when x.resultset_id is not null then 1 else 0 end push_show_android
+    into temp table messages_sent_to_message_received
+   from messages_sent t
+      left join (select distinct resultset_id from ods.panameraolx_asia_hydra_ninja_android_last_month where trackevent = 'push_show' and country_sk='olx|asia|in' and date_event_nk between '2019-06-01' and '2019-06-04') x on x.resultset_id = t.params_extras_message_id
+
+
+
+select
+    params_user_id,
+    params_device_info_model_device_brand,
+    params_device_info_disk_disk_total_space,
+    params_device_info_model_device_os_release,
+    params_device_info_model_device_os_version,
+    cast(params_device_info_screen_screen_width as integer) * cast(params_device_info_screen_screen_height as integer) as width_mutiply_height
+ from spectrum.hydra_p_olx_android
+ WHERE
+   year=2019
+   and month=6
+   and day in (1,2,3,4,5)
+   and params_cc = 'in'
+   and params_device_info_model_device_brand is not null
+group by 1,2,3,4,5,6
+limit 100
+
+select * from spectrum.hydra_p_olx_android
+  WHERE
+   year=2019
+   and month=6
+   and day in (1,2,3,4,5)
+   and params_cc = 'in'
+   and params_device_info_model_device_brand is not null
+limit 100
+
+select
+  count(distinct params_extras_message_id) from quijote_event_id
+
+limit 100
+
+
+
+select cantidad_de_devices , count(distinct user_id) from
+  (
+    select
+        user_id,
+        count(distinct device) as cantidad_de_devices
+      from livesync.panamera_device_tokens
+    where livesync_dbname = 'olxin'
+        and device like 'FCM%'
+        and device_type = 'android'
+  group by 1) t
+group by 1
+order by 1
+
+
+
+select cantidad_de_fcm_despertados,count(*) from (
+select * , row_number() over(partition by params_user_id) as users_with_distinct_fcm from (
+select distinct params_user_id,cantidad_de_fcm_despertados
+  from (
+select
+  params_user_id,
+  params_unique_event_id,
+  count(distinct params_response_unique_message_id) as cantidad_de_fcm_despertados
+   from spectrum.usercomms_quijote_outgoing_push
+where year=2019
+    and month = 6
+    and params_status='success'
+    and params_country_code = 'IN'
+    and params_device_type='android'
+group by 1,2) b) k ) p
+  where users_with_distinct_fcm = 1
+  group by 1
+limit 100
+
+
+
+
+SELECT  id,
+        email,
+        case when (google_id is null and facebook_id is null) or (google_id = '' and facebook_id = '') then 0 else 1 end social_account,
+        case when (default_phone is null) or (default_phone='') then 0 else 1 end tiene_phone,
+        CASE
+             WHEN email LIKE '%olx.co%' THEN 0 -- Autogenerado
+             WHEN email LIKE '%@olx%' THEN 0 -- Autogenerado
+             WHEN email LIKE '%DELETED%' THEN 0 -- Autogenerados
+             WHEN email LIKE '%UNLINK%' THEN 0 -- Autogenerados
+             WHEN email REGEXP '[0-9]{7}' THEN 0 -- Error de carga
+             ELSE 1 END  as valido_email,
+        CASE when default_person!='OLX User' then 1 else 0 end as real_name,
+        CASE when b.external_key is not Null and b.external_key>0 as has_photo
+
+FROM olxpk.users
+    left join (select distinct external_key from olxpk.images where active=1 and type='user') b on a.id=b.external_key
+   where type = 'confirmed'
+        and created_at > '2019-01-01'
+        --and id in {}
+limit 100
+
+drop table if exists user_id_con_app_version;
+select
+  split_part(user_sk , '|' , 6) as user_id,
+  extract(year from date_nk) as year,
+  extract(month from date_nk) as month,
+  extract(day from date_nk) as day,
+  app_version
+  into temp table user_id_con_app_version
+    from ods.fact_user_hydra_browsing_activity
+  where
+    is_panamera = true
+  and channel_sk like '%android%'
+group by 1,2,3,4,5
+
+select
+  *
+   from ods.panameraolx_mea_hydra_ninja_android_last_month
+  limit 100
+
+
+
+select
+  extract(year from operation_timestamp) as year,
+  extract(month from operation_timestamp) as month,
+  extract(day from operation_timestamp) as day,
+  device_ver,
+  livesync_dbname,
+  count(distinct user_id) as users
+from livesync.panamera_device_tokens
+where device like '%|%'
+  group by 1,2,3,4,5
+limit 100;
+
+
+select
+*
+from livesync.panamera_device_tokens
+where device like '%|%'
+  or device like '% %'
+limit 100
+
+
+
+
+

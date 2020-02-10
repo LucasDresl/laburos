@@ -1,0 +1,3424 @@
+{\rtf1\ansi\ansicpg1252\cocoartf1671\cocoasubrtf600
+{\fonttbl\f0\fswiss\fcharset0 Helvetica;\f1\fnil\fcharset0 Menlo-Regular;\f2\fnil\fcharset0 Menlo-Italic;
+}
+{\colortbl;\red255\green255\blue255;\red153\green168\blue186;\red32\green32\blue32;\red191\green100\blue38;
+\red133\green96\blue154;\red88\green118\blue71;\red86\green132\blue173;\red254\green187\blue91;\red109\green109\blue109;
+}
+{\*\expandedcolortbl;;\csgenericrgb\c60000\c65882\c72941;\csgenericrgb\c12549\c12549\c12549;\csgenericrgb\c74902\c39216\c14902;
+\csgenericrgb\c52157\c37647\c60392;\csgenericrgb\c34510\c46275\c27843;\csgenericrgb\c33725\c51765\c67843;\csgenericrgb\c99608\c73333\c35686;\csgenericrgb\c42745\c42745\c42745;
+}
+\paperw11900\paperh16840\margl1440\margr1440\vieww10800\viewh8400\viewkind0
+\pard\tx560\tx1120\tx1680\tx2240\tx2800\tx3360\tx3920\tx4480\tx5040\tx5600\tx6160\tx6720\pardirnatural\partightenfactor0
+
+\f0\fs24 \cf2 \cb3 \
+\
+\
+\
+
+\f1 \cf4 drop table if exists \cf2 new_dau_android\cf4 ;\
+select\
+ \cf5 session_long\cf4 ,\
+ \cf5 date_event_nk\cf4 ,\
+ \cf5 country_sk\
+  \cf4 into temp table \cf2 new_dau_android\
+  \cf4 from \cf2 ods.panameraolx_mea_hydra_ninja_android_last_month\
+\cf4 where \cf5 country_sk\cf2 =\cf6 'olx|mea|pk'\
+ \cf4 and \cf5 trackevent\cf2 =\cf6 'onboarding_show'\
+\cf4 group by \cf5 1\cf4 ,\cf5 2\cf4 ,\cf5 3\
+\
+\cf4 ;drop table if exists \cf2 dub_android\cf4 ;\
+select\
+  \cf2 a.\cf5 session_long\cf4 ,\
+  \cf2 a.\cf5 date_event_nk\cf4 ,\
+  \cf2 a.\cf5 country_sk\
+   \cf4 into temp table \cf2 dub_android\
+   \cf4 from \cf2 ods.panameraolx_mea_hydra_ninja_android_last_month a\
+     \cf4 join \cf2 new_dau_android b \cf4 on \cf2 a.\cf5 session_long\cf2 =b.\cf5 session_long \cf4 and \cf2 a.\cf5 date_event_nk\cf2 =b.\cf5 date_event_nk\
+\cf4 where \cf2 a.\cf5 country_sk\cf2 =\cf6 'olx|mea|pk'\
+ \cf4 and \cf5 trackevent \cf4 in \cf2 (\cf6 'item_tap_call' \cf4 , \cf6 'item_chat_tap_send_1st_reply' \cf4 , \cf6 'item_tap_sms' \cf4 , \cf6 'item_chat_tap_sms'\cf2 )\
+\cf4 group by \cf5 1\cf4 ,\cf5 2\cf4 ,\cf5 3\
+\
+\cf4 ;drop table if exists \cf2 android_table\cf4 ;\
+  select\
+    \cf2 a.\cf5 session_long\cf4 ,\
+    \cf2 a.\cf5 date_event_nk\cf4 ,\
+    \cf2 a.\cf5 country_sk\cf4 ,\
+    case when \cf2 b.\cf5 session_long \cf4 is not null then \cf7 1 \cf4 else \cf7 0 \cf4 end \cf2 replier\
+     \cf4 into temp table \cf2 android_table\
+      \cf4 from \cf2 new_dau_android a\
+  \cf4 left join \cf2 dub_android b \cf4 on \cf2 a.\cf5 session_long\cf2 =b.\cf5 session_long \cf4 and \cf2 a.\cf5 date_event_nk\cf2 =b.\cf5 date_event_nk\
+\
+\cf4 ;drop table if exists \cf2 dub_dau_new\cf4 ;\
+select\
+ 
+\f2\i \cf8 extract
+\f1\i0 \cf2 (\cf4 week from \cf5 date_event_nk\cf2 ) \cf4 as week,\
+ \cf5 country_sk\cf4 ,\
+ 
+\f2\i \cf8 count
+\f1\i0 \cf2 (\cf4 distinct \cf5 session_long\cf2 ) \cf4 as \cf2 new_user_pk\cf4 ,\
+ 
+\f2\i \cf8 sum
+\f1\i0 \cf2 (\cf5 replier\cf2 ) \cf4 as \cf2 repliers_pk\
+  \cf4 into temp table \cf2 dub_dau_new\
+  \cf4 from \cf2 android_table\
+\cf4 group by \cf7 1\cf4 ,\cf7 3\
+\cf4 order by \cf7 1\
+\
+\
+\
+\
+\
+\
+\
+\
+\
+\
+\
+\cf4 ;drop table if exists \cf2 new_dau_android\cf4 ;\
+select\
+ \cf5 session_long\cf4 ,\
+ 
+\f2\i \cf8 extract
+\f1\i0 \cf2 (\cf4 week from \cf5 date_event_nk\cf2 ) \cf4 as week,\
+ \cf5 country_sk\
+  \cf4 into temp table \cf2 new_dau_android\
+  \cf4 from \cf2 ods.panameraolx_asia_hydra_ninja_android_last_month\
+\cf4 where \cf5 country_sk \cf4 in \cf2 (\cf6 'olx|asia|in'\cf4 ,\cf6 'olx|asia|id'\cf2 )\
+ \cf4 and \cf5 trackevent\cf2 =\cf6 'onboarding_show'\
+\cf4 group by \cf5 1\cf4 ,\cf7 2\cf4 ,\cf5 3\
+\
+\cf4 ;drop table if exists \cf2 dub_android\cf4 ;\
+select\
+  \cf2 a.\cf5 session_long\cf4 ,\
+  
+\f2\i \cf8 extract
+\f1\i0 \cf2 (\cf4 week from \cf5 date_event_nk\cf2 ) \cf4 as week,\
+  \cf2 a.\cf5 country_sk\
+   \cf4 into temp table \cf2 dub_android\
+   \cf4 from \cf2 ods.panameraolx_asia_hydra_ninja_android_last_month a\
+     \cf4 join \cf2 new_dau_android b \cf4 on \cf2 a.\cf5 session_long\cf2 =b.\cf5 session_long \cf4 and 
+\f2\i \cf8 extract
+\f1\i0 \cf2 (\cf4 week from \cf2 a.\cf5 date_event_nk\cf2 )=b.week \cf4 and \cf2 a.\cf5 country_sk\cf2 =b.\cf5 country_sk\
+\cf4 where \cf2 a.\cf5 country_sk \cf4 in \cf2 (\cf6 'olx|asia|in'\cf4 ,\cf6 'olx|asia|id'\cf2 )\
+ \cf4 and \cf5 trackevent \cf4 in \cf2 (\cf6 'item_tap_call' \cf4 , \cf6 'item_chat_tap_send_1st_reply' \cf4 , \cf6 'item_tap_sms' \cf4 , \cf6 'item_chat_tap_sms'\cf2 )\
+\cf4 group by \cf5 1\cf4 ,\cf7 2\cf4 ,\cf5 3\
+\
+\cf4 ;drop table if exists \cf2 android_table\cf4 ;\
+  select\
+    \cf2 a.\cf5 session_long\cf4 ,\
+    \cf2 a.week\cf4 ,\
+    \cf2 a.\cf5 country_sk\cf4 ,\
+    case when \cf2 b.\cf5 session_long \cf4 is not null then \cf7 1 \cf4 else \cf7 0 \cf4 end \cf2 replier\
+     \cf4 into temp table \cf2 android_table\
+      \cf4 from \cf2 new_dau_android a\
+  \cf4 left join \cf2 dub_android b \cf4 on \cf2 a.\cf5 session_long\cf2 =b.\cf5 session_long \cf4 and \cf2 a.week=b.week \cf4 and \cf2 a.\cf5 country_sk\cf2 =b.\cf5 country_sk\
+\
+\cf4 ;drop table if exists \cf2 dau_dub_new2\cf4 ;\
+select\
+ week,\
+ 
+\f2\i \cf8 count
+\f1\i0 \cf2 (\cf4 distinct case when \cf5 country_sk \cf2 = \cf6 'olx|asia|in' \cf4 then \cf5 session_long \cf4 else null end\cf2 ) \cf4 as \cf2 new_user_in\cf4 ,\
+ 
+\f2\i \cf8 sum
+\f1\i0 \cf2 (\cf4 case when \cf5 country_sk \cf2 = \cf6 'olx|asia|in' \cf4 then \cf5 replier \cf4 else null end\cf2 ) \cf4 as \cf2 repliers_in\cf4 ,\
+ 
+\f2\i \cf8 count
+\f1\i0 \cf2 (\cf4 distinct case when \cf5 country_sk \cf2 = \cf6 'olx|asia|id' \cf4 then \cf5 session_long \cf4 else null end\cf2 ) \cf4 as \cf2 new_user_id\cf4 ,\
+ 
+\f2\i \cf8 sum
+\f1\i0 \cf2 (\cf4 case when \cf5 country_sk \cf2 = \cf6 'olx|asia|id' \cf4 then \cf5 replier \cf4 else null end\cf2 ) \cf4 as \cf2 repliers_id\
+  \cf4 into temp table \cf2 dau_dub_new2\
+  \cf4 from \cf2 android_table\
+\cf4 group by \cf7 1\
+\cf4 order by \cf7 1\cf4 ;\
+\
+\
+\cf9 ---------------------------------------------------\
+\cf4 drop table if exists \cf2 new_users\cf4 ;\
+select\
+  \cf5 session_long\cf4 ,\
+  \cf5 user_sk\cf4 ,\
+  \cf5 country_sk\cf4 ,\
+  \cf5 date_nk\
+   \cf4 into temp table \cf2 new_users\
+   \cf4 from \cf2 ods.fact_user_hydra_browsing_activity\
+ \cf4 where \cf5 country_sk \cf2 = \cf6 'olx|mea|pk'\
+   \cf4 and \cf5 user_active_new_returning_nk \cf2 = \cf6 'new'\
+   \cf4 and \cf5 date_nk \cf2 >= \cf6 '2019-07-01'\
+\cf4 group by \cf5 1\cf4 ,\cf5 2\cf4 ,\cf5 3\cf4 ,\cf5 4\
+\
+\cf4 drop table if exists \cf2 count_new_users\cf4 ;\
+select\
+  \cf5 date_nk\cf4 ,\
+  \cf5 country_sk\cf4 ,\
+  
+\f2\i \cf8 count
+\f1\i0 \cf2 (\cf4 distinct \cf5 session_long\cf2 ) \cf4 as \cf2 new_users\
+   \cf4 into temp table \cf2 count_new_users\
+       \cf4 from \cf2 new_users\
+\cf4 group by \cf5 1\cf4 ,\cf5 2\
+\cf4 order by \cf5 2\cf4 ,\cf5 1\
+\
+\cf4 drop table if exists \cf2 new_dub\cf4 ;\
+select\
+  \cf5 date_nk\cf4 ,\
+  \cf5 session_long\cf4 ,\
+  \cf5 panamera_user_sk\cf4 ,\
+  \cf2 a.\cf5 country_sk\
+   \cf4 into temp table \cf2 new_dub\
+  \cf4 from \cf2 ods.fact_replies a\
+   \cf4 join \cf2 new_users b \cf4 on \cf2 a.\cf5 panamera_user_sk\cf2 =b.\cf5 user_sk \cf4 and \cf2 a.\cf5 date_sent_nk\cf2 =b.\cf5 date_nk\
+\cf4 where\
+    \cf2 a.\cf5 country_sk \cf2 = \cf6 'olx|mea|pk'\
+\cf4 and \cf5 reply_num_panamera\cf2 =\cf7 1\
+\cf4 and \cf5 date_sent_nk\cf2 >=\cf6 '2019-07-01'\
+\
+\
+\cf4 drop table if exists \cf2 new_dub\cf4 ;\
+select\
+  \cf5 panamera_user_sk\cf4 ,\
+  \cf5 session_long\cf4 ,\
+  \cf2 a.\cf5 country_sk\cf4 ,\
+  
+\f2\i \cf8 min
+\f1\i0 \cf2 (\cf5 date_nk\cf2 ) \cf4 as \cf2 first_date\
+   \cf4 into temp table \cf2 new_dub\
+    \cf4 from \cf2 ods.fact_replies a\
+     \cf4 join \cf2 new_users b \cf4 on \cf2 a.\cf5 panamera_user_sk\cf2 =b.\cf5 user_sk\
+  \cf4 where \cf2 a.\cf5 country_sk\cf2 =\cf6 'olx|mea|pk' \cf4 and \cf5 date_nk \cf2 > \cf6 '2019-07-01' \cf4 and \cf2 a.\cf5 reply_num_panamera\cf2 =\cf7 1\
+\cf4 group by \cf5 1\cf4 ,\cf5 2\cf4 ,\cf5 3\
+\
+\
+\
+\cf4 drop table if exists \cf2 count_new_dub\cf4 ;\
+select\
+  \cf5 date_nk\cf4 ,\
+  \cf5 country_sk\cf4 ,\
+  
+\f2\i \cf8 count
+\f1\i0 \cf2 (\cf4 distinct \cf5 session_long\cf2 ) \cf4 as \cf2 new_dub\
+   \cf4 into temp table \cf2 count_new_dub\
+    \cf4 from \cf2 new_dub\
+ \cf4 group by \cf5 1\cf4 ,\cf5 2\
+ \cf4 order by \cf5 2\cf4 ,\cf5 1\
+\
+\cf4 drop table if exists \cf2 dau_and_dub\cf4 ;\
+select\
+  \cf2 a.\cf8 *\cf4 ,\
+  \cf2 b.\cf5 new_dub\
+  \cf4 into temp table \cf2 dau_and_dub\
+\cf4 from \cf2 count_new_users a\
+  \cf4 join \cf2 count_new_dub b \cf4 on \cf2 a.\cf5 date_nk\cf2 =b.\cf5 date_nk \cf4 and \cf2 a.\cf5 country_sk\cf2 =b.\cf5 country_sk\
+\
+\cf9 -------------------------------------------------------------------\
+\
+\cf4 drop table if exists \cf2 new_dub_mc\cf4 ;\
+select\
+    \cf5 date_nk\cf4 ,\
+    \cf5 country_sk\cf4 ,\
+    
+\f2\i \cf8 count
+\f1\i0 \cf2 (\cf4 distinct \cf5 session_long\cf2 ) \cf4 as \cf2 new_dub_mc\
+   \cf4 into temp table \cf2 new_dub_mc\
+  \cf4 from \cf2 ods.fact_conversations_daily a\
+    \cf4 join \cf2 new_dub b \cf4 on \cf2 a.\cf5 buyer_sk\cf2 =b.\cf5 panamera_user_sk \cf4 and \cf2 a.\cf5 country_sk\cf2 =b.\cf5 country_sk\
+\cf4 where\
+      \cf5 interaction_num_in_conv\cf2 =\cf7 6\
+  \cf4 and \cf5 country_sk \cf2 = \cf6 'olx|mea|pk'\
+  \cf4 and \cf5 date_sent_nk\cf2 >=\cf6 '2019-07-01'\
+  \cf4 and 
+\f2\i \cf8 datediff
+\f1\i0 \cf2 (\cf4 days , \cf5 date_sent_1st_msg_nk \cf4 , \cf5 date_nk\cf2 ) = \cf7 0\
+\cf4 group by \cf5 1\cf4 ,\cf5 2\
+\
+\
+\cf4 select\
+ \cf2 a.\cf8 *\cf4 ,\
+ \cf2 b.\cf5 new_dub_mc\
+  \cf4 from \cf2 dau_and_dub a\
+   \cf4 join \cf2 new_dub_mc b \cf4 on \cf2 a.\cf5 date_nk\cf2 =b.\cf5 date_nk \cf4 and \cf2 a.\cf5 country_sk\cf2 =b.\cf5 country_sk\
+\
+\
+\
+\cf9 ---------------------------\
+\
+\cf4 drop table if exists \cf2 new_users\cf4 ;\
+select\
+  \cf5 session_long\cf4 ,\
+  \cf5 user_sk\cf4 ,\
+  \cf5 country_sk\cf4 ,\
+  \cf5 date_nk\
+   \cf4 into temp table \cf2 new_users\
+   \cf4 from \cf2 ods.fact_user_hydra_browsing_activity\
+ \cf4 where\
+       \cf5 user_active_new_returning_nk \cf2 = \cf6 'new'\
+   \cf4 and \cf5 date_nk \cf4 between \cf6 '2019-09-01' \cf4 and \cf6 '2019-10-'\
+   \cf4 and \cf5 country_sk \cf2 = \cf6 'olx|mea|pk'\
+\cf4 group by \cf5 1\cf4 ,\cf5 2\cf4 ,\cf5 3\cf4 ,\cf5 4\
+\
+\cf4 ;drop table if exists \cf2 count_new_users\cf4 ;\
+select\
+  \cf5 date_nk\cf4 ,\
+  \cf5 country_sk\cf4 ,\
+  
+\f2\i \cf8 count
+\f1\i0 \cf2 (\cf4 distinct \cf5 session_long\cf2 ) \cf4 as \cf2 new_users\
+   \cf4 into temp table \cf2 count_new_users\
+       \cf4 from \cf2 new_users\
+\cf4 group by \cf5 1\cf4 ,\cf5 2\
+\cf4 order by \cf5 2\cf4 ,\cf5 1\
+\
+\cf4 ;drop table if exists \cf2 new_dub\cf4 ;\
+select\
+  \cf5 date_nk\cf4 ,\
+  \cf5 session_long\cf4 ,\
+  \cf5 panamera_user_sk\cf4 ,\
+  \cf2 a.\cf5 country_sk\
+   \cf4 into temp table \cf2 new_dub\
+  \cf4 from \cf2 ods.fact_replies a\
+   \cf4 join \cf2 new_users b \cf4 on \cf2 a.\cf5 panamera_user_sk\cf2 =b.\cf5 user_sk \cf4 and \cf2 a.\cf5 date_sent_nk\cf2 =b.\cf5 date_nk \cf4 and \cf2 b.\cf5 user_sk\cf2 !=\cf6 'unknown'\
+\cf4 where\
+    \cf2 a.\cf5 country_sk \cf2 = \cf6 'olx|mea|pk'\
+\cf4 and \cf5 reply_num_panamera\cf2 =\cf7 1\
+\cf4 and \cf5 date_sent_nk \cf4 between \cf6 '2019-09-01' \cf4 and \cf6 '2019-09-15'\
+\
+\cf4 ;drop table if exists \cf2 count_new_dub\cf4 ;\
+select\
+  \cf5 date_nk\cf4 ,\
+  \cf5 country_sk\cf4 ,\
+  
+\f2\i \cf8 count
+\f1\i0 \cf2 (\cf4 distinct \cf5 session_long\cf2 ) \cf4 as \cf2 new_dub\
+   \cf4 into temp table \cf2 count_new_dub\
+    \cf4 from \cf2 new_dub\
+ \cf4 group by \cf5 1\cf4 ,\cf5 2\
+ \cf4 order by \cf5 2\cf4 ,\cf5 1\
+\
+\cf4 ;drop table if exists \cf2 dau_and_dub\cf4 ;\
+select\
+  \cf2 a.\cf8 *\cf4 ,\
+  \cf2 b.\cf5 new_dub\
+  \cf4 into temp table \cf2 dau_and_dub\
+\cf4 from \cf2 count_new_users a\
+  \cf4 join \cf2 count_new_dub b \cf4 on \cf2 a.\cf5 date_nk\cf2 =b.\cf5 date_nk \cf4 and \cf2 a.\cf5 country_sk\cf2 =b.\cf5 country_sk\
+\
+\
+\cf4 ;drop table if exists \cf2 new_dub_mc\cf4 ;\
+select\
+    \cf5 date_nk\cf4 ,\
+    \cf2 a.\cf5 country_sk\cf4 ,\
+    
+\f2\i \cf8 count
+\f1\i0 \cf2 (\cf4 distinct \cf5 session_long\cf2 ) \cf4 as \cf2 new_dub_mc\
+   \cf4 into temp table \cf2 new_dub_mc\
+  \cf4 from \cf2 ods.fact_conversations_daily a\
+    \cf4 join \cf2 new_dub b \cf4 on \cf2 a.\cf5 buyer_sk\cf2 =b.\cf5 panamera_user_sk \cf4 and \cf2 a.\cf5 country_sk\cf2 =b.\cf5 country_sk\
+\cf4 where\
+      \cf5 interaction_num_in_conv\cf2 =\cf7 6\
+  \cf4 and \cf2 a.\cf5 country_sk \cf2 = \cf6 'olx|mea|pk'\
+  \cf4 and \cf5 date_sent_nk \cf4 between \cf6 '2019-09-01' \cf4 and \cf6 '2019-09-15'\
+  \cf4 and 
+\f2\i \cf8 datediff
+\f1\i0 \cf2 (\cf4 days , \cf5 date_sent_1st_msg_nk \cf4 , \cf5 date_nk\cf2 ) = \cf7 0\
+\cf4 group by \cf5 1\cf4 ,\cf5 2\cf4 ;\
+\
+\
+select\
+ 
+\f2\i \cf8 extract
+\f1\i0 \cf2 (\cf4 week from \cf2 a.\cf5 date_nk\cf2 ) \cf4 as week,\
+ 
+\f2\i \cf8 sum
+\f1\i0 \cf2 (\cf5 new_users\cf2 )\cf4 ,\
+ 
+\f2\i \cf8 sum
+\f1\i0 \cf2 (\cf5 new_dub\cf2 )\cf4 ,\
+ 
+\f2\i \cf8 sum
+\f1\i0 \cf2 (\cf5 new_dub_mc\cf2 )\
+  \cf4 from \cf2 dau_and_dub a\
+   \cf4 join \cf2 new_dub_mc b \cf4 on \cf2 a.\cf5 date_nk\cf2 =b.\cf5 date_nk \cf4 and \cf2 a.\cf5 country_sk\cf2 =b.\cf5 country_sk\
+\cf4 group by \cf7 1\
+\
+\
+\cf9 ------------------------------------\
+\
+\
+\
+\cf4 drop table if exists \cf2 first_reply\cf4 ;\
+select\
+ 
+\f2\i \cf8 split_part
+\f1\i0 \cf2 (\cf5 panamera_user_sk \cf4 , \cf6 '|' \cf4 , \cf7 6\cf2 ) \cf4 as \cf2 user_id\cf4 ,\
+ 
+\f2\i \cf8 min
+\f1\i0 \cf2 (\cf5 date_sent_nk\cf2 ) \cf4 as \cf2 date_first_reply\
+    \cf4 into temp table \cf2 first_reply\
+  \cf4 from \cf2 ods.fact_replies\
+\cf4 where\
+  \cf5 country_sk \cf2 = \cf6 'olx|mea|pk'\
+\cf4 and \cf5 reply_num_panamera\cf2 =\cf7 1\
+\cf4 and \cf5 reply_net_sk \cf4 like \cf6 '%net%'\
+\cf4 group by \cf7 1\
+\
+\
+\cf4 drop table if exists \cf2 dub\cf4 ;\
+select\
+ 
+\f2\i \cf8 split_part
+\f1\i0 \cf2 (\cf5 panamera_user_sk \cf4 , \cf6 '|' \cf4 , \cf7 6\cf2 ) \cf4 as \cf2 user_id\cf4 ,\
+ \cf5 date_sent_nk\
+   \cf4 into temp table \cf2 dub\
+  \cf4 from \cf2 ods.fact_replies\
+\cf4 where\
+  \cf5 country_sk\cf2 =\cf6 'olx|mea|pk'\
+\cf4 and \cf5 reply_num_panamera\cf2 =\cf7 1\
+\cf4 and \cf5 date_sent_nk \cf4 between \cf6 '2019-09-01' \cf4 and \cf6 '2019-09-15'\
+\cf4 and \cf5 reply_net_sk \cf4 like \cf6 '%net%'\
+\cf4 group by \cf7 1\cf4 ,\cf5 2\
+\
+\cf4 drop table if exists \cf2 type_buyer\cf4 ;\
+select\
+   \cf2 a.\cf8 *\cf4 ,\
+   \cf2 b.\cf5 date_first_reply\cf4 ,\
+   case when \cf2 b.\cf5 date_first_reply \cf2 = \cf5 date_sent_nk \cf4 then \cf6 'new' \cf4 else \cf6 'returning' \cf4 end as \cf2 type_buyer\
+  \cf4 into temp table \cf2 type_buyer\
+ \cf4 from \cf2 dub a\
+  \cf4 left join \cf2 first_reply b \cf4 on \cf2 a.\cf5 user_id\cf2 =b.\cf5 user_id\
+\
+\
+\cf4 select \cf5 date_first_reply \cf4 , 
+\f2\i \cf8 count
+\f1\i0 \cf2 (\cf5 user_id\cf2 ) \cf4 from \cf2 type_buyer \cf4 where \cf5 type_buyer\cf2 =\cf6 'new' \cf4 group by \cf5 1\
+\
+\cf9 ------------------------\
+-------------------------------\
+\
+  -- PK\
+\
+\cf4 drop table if exists \cf2 new_dau_android\cf4 ;\
+select\
+ \cf5 session_long\cf4 ,\
+ \cf5 date_event_nk\cf4 ,\
+ \cf5 country_sk\
+  \cf4 into temp table \cf2 new_dau_android\
+  \cf4 from \cf2 ods.panameraolx_mea_hydra_ninja_android_last_month\
+\cf4 where \cf5 country_sk\cf2 =\cf6 'olx|mea|pk'\
+ \cf4 and \cf5 trackevent\cf2 =\cf6 'onboarding_show'\
+\cf4 group by \cf7 1\cf4 ,\cf7 2\cf4 ,\cf7 3\
+\
+\cf4 ;drop table if exists \cf2 dub_android\cf4 ;\
+select\
+  \cf2 a.session_long\cf4 ,\
+  \cf2 a.date_event_nk\cf4 ,\
+  \cf2 a.country_sk\
+   \cf4 into temp table \cf2 dub_android\
+   \cf4 from \cf2 ods.panameraolx_mea_hydra_ninja_android_last_month a\
+     \cf4 join \cf2 new_dau_android b \cf4 on \cf2 a.session_long=b.session_long \cf4 and \cf2 a.date_event_nk=b.date_event_nk\
+\cf4 where \cf2 a.country_sk=\cf6 'olx|mea|pk'\
+ \cf4 and \cf2 trackevent \cf4 in \cf2 (\cf6 'item_tap_call' \cf4 , \cf6 'item_chat_tap_send_1st_reply' \cf4 , \cf6 'item_tap_sms' \cf4 , \cf6 'item_chat_tap_sms'\cf2 )\
+\cf4 group by \cf7 1\cf4 ,\cf7 2\cf4 ,\cf7 3\
+\
+\cf4 ;drop table if exists \cf2 android_table\cf4 ;\
+  select\
+    \cf2 a.session_long\cf4 ,\
+    \cf2 a.date_event_nk\cf4 ,\
+    \cf2 a.country_sk\cf4 ,\
+    case when \cf2 b.session_long \cf4 is not null then \cf7 1 \cf4 else \cf7 0 \cf4 end \cf2 replier\
+     \cf4 into temp table \cf2 android_table\
+      \cf4 from \cf2 new_dau_android a\
+  \cf4 left join \cf2 dub_android b \cf4 on \cf2 a.session_long=b.session_long \cf4 and \cf2 a.date_event_nk=b.date_event_nk\
+\
+\cf4 ;drop table if exists \cf2 dub_dau_new\cf4 ;\
+select\
+ extract\cf2 (\cf4 week from \cf2 date_event_nk) \cf4 as week,\
+ \cf2 country_sk\cf4 ,\
+ count\cf2 (\cf4 distinct \cf2 session_long) \cf4 as \cf2 new_user_pk\cf4 ,\
+ \cf2 sum(replier) \cf4 as \cf2 repliers_pk\
+  \cf4 into temp table \cf2 dub_dau_new\
+  \cf4 from \cf2 android_table\
+\cf4 group by \cf7 1\cf4 ,\cf7 3\
+\cf4 order by \cf7 1\
+\
+\
+\cf4 ;drop table if exists \cf2 new_dau_android\cf4 ;\
+select\
+ \cf2 session_long\cf4 ,\
+ extract\cf2 (\cf4 week from \cf2 date_event_nk) \cf4 as week,\
+ \cf2 country_sk\
+  \cf4 into temp table \cf2 new_dau_android\
+  \cf4 from \cf2 ods.panameraolx_asia_hydra_ninja_android_last_month\
+\cf4 where \cf2 country_sk \cf4 in \cf2 (\cf6 'olx|asia|in'\cf4 ,\cf6 'olx|asia|id'\cf2 )\
+ \cf4 and \cf2 trackevent=\cf6 'onboarding_show'\
+\cf4 group by \cf7 1\cf4 ,\cf7 2\cf4 ,\cf7 3\
+\
+\cf4 ;drop table if exists \cf2 dub_android\cf4 ;\
+select\
+  \cf2 a.session_long\cf4 ,\
+  extract\cf2 (\cf4 week from \cf2 date_event_nk) \cf4 as week,\
+  \cf2 a.country_sk\
+   \cf4 into temp table \cf2 dub_android\
+   \cf4 from \cf2 ods.panameraolx_asia_hydra_ninja_android_last_month a\
+     \cf4 join \cf2 new_dau_android b \cf4 on \cf2 a.session_long=b.session_long \cf4 and extract\cf2 (\cf4 week from \cf2 a.date_event_nk)=b.week \cf4 and \cf2 a.country_sk=b.country_sk\
+\cf4 where \cf2 a.country_sk \cf4 in \cf2 (\cf6 'olx|asia|in'\cf4 ,\cf6 'olx|asia|id'\cf2 )\
+ \cf4 and \cf2 trackevent \cf4 in \cf2 (\cf6 'item_tap_call' \cf4 , \cf6 'item_chat_tap_send_1st_reply' \cf4 , \cf6 'item_tap_sms' \cf4 , \cf6 'item_chat_tap_sms'\cf2 )\
+\cf4 group by \cf7 1\cf4 ,\cf7 2\cf4 ,\cf7 3\
+\
+\cf4 ;drop table if exists \cf2 android_table\cf4 ;\
+  select\
+    \cf2 a.session_long\cf4 ,\
+    \cf2 a.week\cf4 ,\
+    \cf2 a.country_sk\cf4 ,\
+    case when \cf2 b.session_long \cf4 is not null then \cf7 1 \cf4 else \cf7 0 \cf4 end \cf2 replier\
+     \cf4 into temp table \cf2 android_table\
+      \cf4 from \cf2 new_dau_android a\
+  \cf4 left join \cf2 dub_android b \cf4 on \cf2 a.session_long=b.session_long \cf4 and \cf2 a.week=b.week \cf4 and \cf2 a.country_sk=b.country_sk\
+\
+\cf4 ;drop table if exists \cf2 dau_dub_new2\cf4 ;\
+select\
+ week,\
+ count\cf2 (\cf4 distinct case when \cf2 country_sk = \cf6 'olx|asia|in' \cf4 then \cf2 session_long \cf4 else null end\cf2 ) \cf4 as \cf2 new_user_in\cf4 ,\
+ \cf2 sum(\cf4 case when \cf2 country_sk = \cf6 'olx|asia|in' \cf4 then \cf2 replier \cf4 else null end\cf2 ) \cf4 as \cf2 repliers_in\cf4 ,\
+ count\cf2 (\cf4 distinct case when \cf2 country_sk = \cf6 'olx|asia|id' \cf4 then \cf2 session_long \cf4 else null end\cf2 ) \cf4 as \cf2 new_user_id\cf4 ,\
+ \cf2 sum(\cf4 case when \cf2 country_sk = \cf6 'olx|asia|id' \cf4 then \cf2 replier \cf4 else null end\cf2 ) \cf4 as \cf2 repliers_id\
+  \cf4 into temp table \cf2 dau_dub_new2\
+  \cf4 from \cf2 android_table\
+\cf4 group by \cf7 1\
+\cf4 order by \cf7 1\cf4 ;\
+\
+\
+select\
+  \cf2 *\
+  \cf4 from \cf2 dau_dub_new2 a\
+   \cf4 join \cf2 dub_dau_new b \cf4 on \cf2 a.week=b.week\
+\
+\
+\
+\cf9 ---------------------------\
+---------------------------\
+\
+\cf4 select\
+  \cf2 date_nk\cf4 ,\
+  count\cf2 (\cf4 distinct \cf2 session_long) \cf4 as \cf2 dau\
+  \cf4 from \cf2 ods.fact_user_hydra_browsing_activity\
+ \cf4 where\
+        \cf2 is_panamera \cf4 is true\
+    and \cf2 country_sk = \cf6 'olx|asia|in'\
+    \cf4 and \cf2 date_nk \cf4 between \cf6 '2019-02-01' \cf4 and \cf6 '2019-02-28'\
+    \cf4 and \cf2 channel_sk \cf4 like \cf6 '%android%'\
+ \cf4 group by \cf7 1\
+\
+\
+\cf4 select\
+  \cf2 date_event_nk\cf4 ,\
+  count\cf2 (\cf4 distinct case when \cf2 trackevent = \cf6 'login_show' \cf4 then \cf2 session_long \cf4 else null end\cf2 ) \cf4 as \cf2 login_show\cf4 ,\
+  count\cf2 (\cf4 distinct case when \cf2 trackevent = \cf6 'onboarding_show' \cf4 then \cf2 session_long \cf4 else null end\cf2 ) \cf4 as \cf2 onboarding_show\cf4 ,\
+  count\cf2 (\cf4 distinct case when \cf2 trackevent = \cf6 'onboarding_show' \cf4 or \cf2 trackevent=\cf6 'login_show' \cf4 then \cf2 session_long \cf4 else null end\cf2 ) \cf4 as \cf2 onboarding_show_and_login_show\
+   \cf4 from \cf2 ods.panameraolx_asia_hydra_ninja_android_201902\
+     \cf4 where \cf2 server_path = \cf6 '/h/p-olx-android'\
+ \cf4 group by \cf7 1\
+\
+\
+\cf4 WITH \cf2 verified \cf4 AS \cf2 (\
+    \cf4 SELECT session\
+from \cf2 ods.panameraolx_mea_hydra_ninja_android_last_month\
+\cf4 WHERE \cf2 trackevent = \cf6 'location_action' \cf4 and \cf2 flow_step=\cf6 'permissions' \cf4 and \cf2 chosen_option=\cf6 'yes' \cf4 and \cf2 country_sk=\cf6 'olx|mea|pk' \cf4 and \cf2 date_event_nk \cf4 between \cf6 '2019-11-05' \cf4 and \cf6 '2019-11-07'\
+\cf2 )\
+\cf4 SELECT\
+  \cf2 date_event_nk\cf4 ,\
+  COUNT\cf2 (\cf4 DISTINCT CASE WHEN \cf2 trackevent = \cf6 'location_action' \cf4 and \cf2 flow_step=\cf6 'permissions' \cf4 and \cf2 chosen_option=\cf6 'yes' \cf4 THEN \cf2 session_long \cf4 ELSE NULL END\cf2 ) \cf4 AS \cf2 location_action\cf4 ,\
+  COUNT\cf2 (\cf4 DISTINCT CASE WHEN \cf2 trackevent = \cf6 'location_show' \cf4 and \cf2 flow_step = \cf6 'gps' \cf4 THEN \cf2 session_long \cf4 ELSE NULL END\cf2 ) \cf4 AS \cf2 location_show\
+\cf4 FROM \cf2 ods.panameraolx_mea_hydra_ninja_android_last_month\
+\cf4 JOIN \cf2 verified \cf4 USING \cf2 (\cf4 session\cf2 )\
+\cf4 group by \cf7 1\
+\cf4 ;\
+\
+\
+\
+\
+\
+\
+select\
+\
+    from \cf2 ods.panameraolx_mea_hydra_ninja_web_last_month\
+  \cf4 where\
+       \cf2 trackevent    = \cf6 'profile_completion_error'\
+  \cf4 and  \cf2 error_message = \cf6 'This account is already in use'\
+\
+\
+\cf9 ---------------------------------------------------------------------------------\
+\
+\cf4 select\
+  \cf2 date_event_nk\cf4 ,\
+  count\cf2 (\cf4 distinct \cf2 session_long) \cf4 as \cf2 qty_user\
+   \cf4 from \cf2 ods.fact_login_complete\
+  \cf4 where \cf2 country_sk = \cf6 'olx|mea|za'\
+   \cf4 and \cf2 trackevent = \cf6 'login_sign_in_complete'\
+     \cf4 and \cf2 channel_sk \cf4 like \cf6 '%web%'\
+     \cf4 and \cf2 date_event_nk >= \cf6 '2019-04-01'\
+    \cf4 group by \cf7 1\
+\
+\
+\
+\cf9 ------------------------------------------------\
+\
+\cf4 drop table if exists \cf2 startes_by_myaccount\cf4 ;\
+select\
+  \cf2 session_long\cf4 ,\
+  \cf7 1 \cf4 as \cf2 startes_by_myaccount\
+   \cf4 into temp \cf2 startes_by_myaccount\
+   \cf4 from \cf2 ods.panameraolx_mea_hydra_ninja_android_last_month\
+  \cf4 where\
+    \cf2 trackevent = \cf6 'myaccount_action'\
+ \cf4 and \cf2 chosen_option=\cf6 'profile_bar'\
+ \cf4 and \cf2 country_sk = \cf6 'olx|mea|pk'\
+ \cf4 and \cf2 app_version \cf4 in \cf2 (\cf6 '13.14.04' \cf4 , \cf6 '13.14.05' \cf4 , \cf6 '13.14.06' \cf4 , \cf6 '13.14.07'\cf2 )\
+\cf4 group by \cf7 1\cf4 ,\cf7 2\
+\cf4 order by \cf7 2\cf4 ,\cf7 1\
+\
+\cf4 drop table if exists \cf2 startes_by_myaccount_login\cf4 ;\
+select\
+  \cf2 n.session_long\cf4 ,\
+  case when \cf2 login_method = \cf6 'phone' \cf4 then \cf7 1 \cf4 else \cf7 0 \cf4 end as \cf2 phone\cf4 ,\
+  case when \cf2 login_method = \cf6 'email' \cf4 then \cf7 1 \cf4 else \cf7 0 \cf4 end as \cf2 email\cf4 ,\
+  case when \cf2 login_method = \cf6 'facebook' \cf4 then \cf7 1 \cf4 else \cf7 0 \cf4 end as \cf2 facebook\cf4 ,\
+  case when \cf2 login_method = \cf6 'google' \cf4 then \cf7 1 \cf4 else \cf7 0 \cf4 end as \cf2 google\
+   \cf4 into temp \cf2 startes_by_myaccount_login\
+   \cf4 from \cf2 ods.fact_login_complete n\
+     \cf4 inner join \cf2 startes_by_myaccount \cf4 m on m\cf2 .session_long=n.session_long\
+    \cf4 where \cf2 country_sk = \cf6 'olx|mea|pk'\
+\cf4 group by \cf7 1\cf4 ,\cf7 2\cf4 ,\cf7 3\cf4 ,\cf7 4\cf4 ,\cf7 5\
+\
+\cf4 drop table if exists \cf2 profile_completion_myaccount\cf4 ;\
+select\
+  \cf2 f1.*\cf4 ,\
+  case when \cf2 f2.session_long \cf4 is not null then \cf7 1 \cf4 else \cf7 0 \cf4 end as \cf2 about_show\cf4 ,\
+  case when \cf2 f3.session_long \cf4 is not null then \cf7 1 \cf4 else \cf7 0 \cf4 end as \cf2 about_continue\cf4 ,\
+  case when \cf2 f4.session_long \cf4 is not null then \cf7 1 \cf4 else \cf7 0 \cf4 end as \cf2 about_skip\cf4 ,\
+  case when \cf2 f5.session_long \cf4 is not null then \cf7 1 \cf4 else \cf7 0 \cf4 end as \cf2 about_close\cf4 ,\
+\
+  case when \cf2 f6.session_long \cf4 is not null then \cf7 1 \cf4 else \cf7 0 \cf4 end as \cf2 picture_show\cf4 ,\
+  case when \cf2 f7.session_long \cf4 is not null then \cf7 1 \cf4 else \cf7 0 \cf4 end as \cf2 picture_continue\cf4 ,\
+  case when \cf2 f8.session_long \cf4 is not null then \cf7 1 \cf4 else \cf7 0 \cf4 end as \cf2 picture_skip\cf4 ,\
+  case when \cf2 f9.session_long \cf4 is not null then \cf7 1 \cf4 else \cf7 0 \cf4 end as \cf2 picture_close\cf4 ,\
+\
+  case when \cf2 f10.session_long \cf4 is not null then \cf7 1 \cf4 else \cf7 0 \cf4 end as \cf2 name_show\cf4 ,\
+  case when \cf2 f11.session_long \cf4 is not null then \cf7 1 \cf4 else \cf7 0 \cf4 end as \cf2 name_continue\cf4 ,\
+  case when \cf2 f12.session_long \cf4 is not null then \cf7 1 \cf4 else \cf7 0 \cf4 end as \cf2 name_skip\cf4 ,\
+  case when \cf2 f13.session_long \cf4 is not null then \cf7 1 \cf4 else \cf7 0 \cf4 end as \cf2 name_close\cf4 ,\
+\
+  case when \cf2 f14.session_long \cf4 is not null then \cf7 1 \cf4 else \cf7 0 \cf4 end as \cf2 email_show\cf4 ,\
+  case when \cf2 f15.session_long \cf4 is not null then \cf7 1 \cf4 else \cf7 0 \cf4 end as \cf2 email_continue\cf4 ,\
+  case when \cf2 f16.session_long \cf4 is not null then \cf7 1 \cf4 else \cf7 0 \cf4 end as \cf2 email_skip\cf4 ,\
+  case when \cf2 f17.session_long \cf4 is not null then \cf7 1 \cf4 else \cf7 0 \cf4 end as \cf2 email_close\cf4 ,\
+\
+  case when \cf2 f18.session_long \cf4 is not null then \cf7 1 \cf4 else \cf7 0 \cf4 end as \cf2 phone_show\cf4 ,\
+  case when \cf2 f19.session_long \cf4 is not null then \cf7 1 \cf4 else \cf7 0 \cf4 end as \cf2 phone_continue\cf4 ,\
+  case when \cf2 f20.session_long \cf4 is not null then \cf7 1 \cf4 else \cf7 0 \cf4 end as \cf2 phone_skip\cf4 ,\
+  case when \cf2 f21.session_long \cf4 is not null then \cf7 1 \cf4 else \cf7 0 \cf4 end as \cf2 phone_close\cf4 ,\
+\
+  case when \cf2 f22.session_long \cf4 is not null then \cf7 1 \cf4 else \cf7 0 \cf4 end as \cf2 socialaccount_show\cf4 ,\
+  case when \cf2 f23.session_long \cf4 is not null then \cf7 1 \cf4 else \cf7 0 \cf4 end as \cf2 socialaccount_continue\cf4 ,\
+  case when \cf2 f24.session_long \cf4 is not null then \cf7 1 \cf4 else \cf7 0 \cf4 end as \cf2 socialaccount_skip\cf4 ,\
+  case when \cf2 f25.session_long \cf4 is not null then \cf7 1 \cf4 else \cf7 0 \cf4 end as \cf2 socialaccount_close\
+\
+  \cf4 into temp \cf2 profile_completion_myaccount\
+   \cf4 from \cf2 startes_by_myaccount f1\
+     \cf4 left join \cf2 (\cf4 select \cf2 session_long \cf4 from \cf2 ods.panameraolx_mea_hydra_ninja_android_last_month \cf4 where \cf2 trackevent=\cf6 'profile_completion_show'   \cf4 and \cf2 country_sk=\cf6 'olx|mea|pk' \cf4 and \cf2 origin_nk = \cf6 'profile_bar' \cf4 and \cf2 flow_step = \cf6 'has_about' \cf4 group by \cf7 1\cf2 ) f2 \cf4 on \cf2 f1.session_long=f2.session_long\
+     \cf4 left join \cf2 (\cf4 select \cf2 session_long \cf4 from \cf2 ods.panameraolx_mea_hydra_ninja_android_last_month \cf4 where \cf2 trackevent=\cf6 'profile_completion_action' \cf4 and \cf2 country_sk=\cf6 'olx|mea|pk' \cf4 and \cf2 origin_nk = \cf6 'profile_bar' \cf4 and \cf2 chosen_option = \cf6 'continue' \cf4 and \cf2 flow_step = \cf6 'has_about' \cf4 group by \cf7 1\cf2 ) f3 \cf4 on  \cf2 f1.session_long=f3.session_long\
+     \cf4 left join \cf2 (\cf4 select \cf2 session_long \cf4 from \cf2 ods.panameraolx_mea_hydra_ninja_android_last_month \cf4 where \cf2 trackevent=\cf6 'profile_completion_action' \cf4 and \cf2 country_sk=\cf6 'olx|mea|pk' \cf4 and \cf2 origin_nk = \cf6 'profile_bar' \cf4 and \cf2 chosen_option = \cf6 'skip' \cf4 and \cf2 flow_step = \cf6 'has_about' \cf4 group by \cf7 1\cf2 ) f4 \cf4 on  \cf2 f1.session_long=f4.session_long\
+     \cf4 left join \cf2 (\cf4 select \cf2 session_long \cf4 from \cf2 ods.panameraolx_mea_hydra_ninja_android_last_month \cf4 where \cf2 trackevent=\cf6 'profile_completion_action' \cf4 and \cf2 country_sk=\cf6 'olx|mea|pk' \cf4 and \cf2 origin_nk = \cf6 'profile_bar' \cf4 and \cf2 chosen_option = \cf6 'close' \cf4 and \cf2 flow_step = \cf6 'has_about' \cf4 group by \cf7 1\cf2 ) f5 \cf4 on  \cf2 f1.session_long=f5.session_long\
+\
+     \cf4 left join \cf2 (\cf4 select \cf2 session_long \cf4 from \cf2 ods.panameraolx_mea_hydra_ninja_android_last_month \cf4 where \cf2 trackevent=\cf6 'profile_completion_show'   \cf4 and \cf2 country_sk=\cf6 'olx|mea|pk' \cf4 and \cf2 origin_nk = \cf6 'profile_bar' \cf4 and \cf2 flow_step = \cf6 'has_picture' \cf4 group by \cf7 1\cf2 ) f6 \cf4 on  \cf2 f1.session_long=f6.session_long\
+     \cf4 left join \cf2 (\cf4 select \cf2 session_long \cf4 from \cf2 ods.panameraolx_mea_hydra_ninja_android_last_month \cf4 where \cf2 trackevent=\cf6 'profile_completion_action' \cf4 and \cf2 country_sk=\cf6 'olx|mea|pk' \cf4 and \cf2 origin_nk = \cf6 'profile_bar' \cf4 and \cf2 chosen_option = \cf6 'continue' \cf4 and \cf2 flow_step = \cf6 'has_picture' \cf4 group by \cf7 1\cf2 ) f7 \cf4 on  \cf2 f1.session_long=f7.session_long\
+     \cf4 left join \cf2 (\cf4 select \cf2 session_long \cf4 from \cf2 ods.panameraolx_mea_hydra_ninja_android_last_month \cf4 where \cf2 trackevent=\cf6 'profile_completion_action' \cf4 and \cf2 country_sk=\cf6 'olx|mea|pk' \cf4 and \cf2 origin_nk = \cf6 'profile_bar' \cf4 and \cf2 chosen_option = \cf6 'skip' \cf4 and \cf2 flow_step = \cf6 'has_picture' \cf4 group by \cf7 1\cf2 ) f8 \cf4 on  \cf2 f1.session_long=f8.session_long\
+     \cf4 left join \cf2 (\cf4 select \cf2 session_long \cf4 from \cf2 ods.panameraolx_mea_hydra_ninja_android_last_month \cf4 where \cf2 trackevent=\cf6 'profile_completion_action' \cf4 and \cf2 country_sk=\cf6 'olx|mea|pk' \cf4 and \cf2 origin_nk = \cf6 'profile_bar' \cf4 and \cf2 chosen_option = \cf6 'close' \cf4 and \cf2 flow_step = \cf6 'has_picture' \cf4 group by \cf7 1\cf2 ) f9 \cf4 on  \cf2 f1.session_long=f9.session_long\
+\
+     \cf4 left join \cf2 (\cf4 select \cf2 session_long \cf4 from \cf2 ods.panameraolx_mea_hydra_ninja_android_last_month \cf4 where \cf2 trackevent=\cf6 'profile_completion_show'   \cf4 and \cf2 country_sk=\cf6 'olx|mea|pk' \cf4 and \cf2 origin_nk = \cf6 'profile_bar' \cf4 and \cf2 flow_step = \cf6 'valid_name' \cf4 group by \cf7 1\cf2 ) f10 \cf4 on \cf2 f1.session_long=f10.session_long\
+     \cf4 left join \cf2 (\cf4 select \cf2 session_long \cf4 from \cf2 ods.panameraolx_mea_hydra_ninja_android_last_month \cf4 where \cf2 trackevent=\cf6 'profile_completion_action' \cf4 and \cf2 country_sk=\cf6 'olx|mea|pk' \cf4 and \cf2 origin_nk = \cf6 'profile_bar' \cf4 and \cf2 chosen_option = \cf6 'continue' \cf4 and \cf2 flow_step = \cf6 'valid_name' \cf4 group by \cf7 1\cf2 ) f11 \cf4 on  \cf2 f1.session_long=f11.session_long\
+     \cf4 left join \cf2 (\cf4 select \cf2 session_long \cf4 from \cf2 ods.panameraolx_mea_hydra_ninja_android_last_month \cf4 where \cf2 trackevent=\cf6 'profile_completion_action' \cf4 and \cf2 country_sk=\cf6 'olx|mea|pk' \cf4 and \cf2 origin_nk = \cf6 'profile_bar' \cf4 and \cf2 chosen_option = \cf6 'skip' \cf4 and \cf2 flow_step = \cf6 'valid_name' \cf4 group by \cf7 1\cf2 ) f12 \cf4 on  \cf2 f1.session_long=f12.session_long\
+     \cf4 left join \cf2 (\cf4 select \cf2 session_long \cf4 from \cf2 ods.panameraolx_mea_hydra_ninja_android_last_month \cf4 where \cf2 trackevent=\cf6 'profile_completion_action' \cf4 and \cf2 country_sk=\cf6 'olx|mea|pk' \cf4 and \cf2 origin_nk = \cf6 'profile_bar' \cf4 and \cf2 chosen_option = \cf6 'close' \cf4 and \cf2 flow_step = \cf6 'valid_name' \cf4 group by \cf7 1\cf2 ) f13 \cf4 on \cf2 f1.session_long=f13.session_long\
+\
+     \cf4 left join \cf2 (\cf4 select \cf2 session_long \cf4 from \cf2 ods.panameraolx_mea_hydra_ninja_android_last_month \cf4 where \cf2 trackevent=\cf6 'profile_completion_show'   \cf4 and \cf2 country_sk=\cf6 'olx|mea|pk' \cf4 and \cf2 origin_nk = \cf6 'profile_bar' \cf4 and \cf2 flow_step = \cf6 'valid_email' \cf4 group by \cf7 1\cf2 ) f14 \cf4 on  \cf2 f1.session_long=f14.session_long\
+     \cf4 left join \cf2 (\cf4 select \cf2 session_long \cf4 from \cf2 ods.panameraolx_mea_hydra_ninja_android_last_month \cf4 where \cf2 trackevent=\cf6 'profile_completion_action' \cf4 and \cf2 country_sk=\cf6 'olx|mea|pk' \cf4 and \cf2 origin_nk = \cf6 'profile_bar' \cf4 and \cf2 chosen_option = \cf6 'continue' \cf4 and \cf2 flow_step = \cf6 'valid_email' \cf4 group by \cf7 1\cf2 ) f15 \cf4 on \cf2 f1.session_long=f15.session_long\
+     \cf4 left join \cf2 (\cf4 select \cf2 session_long \cf4 from \cf2 ods.panameraolx_mea_hydra_ninja_android_last_month \cf4 where \cf2 trackevent=\cf6 'profile_completion_action' \cf4 and \cf2 country_sk=\cf6 'olx|mea|pk' \cf4 and \cf2 origin_nk = \cf6 'profile_bar' \cf4 and \cf2 chosen_option = \cf6 'skip' \cf4 and \cf2 flow_step = \cf6 'valid_email' \cf4 group by \cf7 1\cf2 ) f16 \cf4 on  \cf2 f1.session_long=f16.session_long\
+     \cf4 left join \cf2 (\cf4 select \cf2 session_long \cf4 from \cf2 ods.panameraolx_mea_hydra_ninja_android_last_month \cf4 where \cf2 trackevent=\cf6 'profile_completion_action' \cf4 and \cf2 country_sk=\cf6 'olx|mea|pk' \cf4 and \cf2 origin_nk = \cf6 'profile_bar' \cf4 and \cf2 chosen_option = \cf6 'close' \cf4 and \cf2 flow_step = \cf6 'valid_email' \cf4 group by \cf7 1\cf2 ) f17 \cf4 on  \cf2 f1.session_long=f17.session_long\
+\
+     \cf4 left join \cf2 (\cf4 select \cf2 session_long \cf4 from \cf2 ods.panameraolx_mea_hydra_ninja_android_last_month \cf4 where \cf2 trackevent=\cf6 'profile_completion_show'   \cf4 and \cf2 country_sk=\cf6 'olx|mea|pk' \cf4 and \cf2 origin_nk = \cf6 'profile_bar' \cf4 and \cf2 flow_step = \cf6 'valid_phone' \cf4 group by \cf7 1\cf2 ) f18 \cf4 on  \cf2 f1.session_long=f18.session_long\
+     \cf4 left join \cf2 (\cf4 select \cf2 session_long \cf4 from \cf2 ods.panameraolx_mea_hydra_ninja_android_last_month \cf4 where \cf2 trackevent=\cf6 'profile_completion_action' \cf4 and \cf2 country_sk=\cf6 'olx|mea|pk' \cf4 and \cf2 origin_nk = \cf6 'profile_bar' \cf4 and \cf2 chosen_option = \cf6 'continue' \cf4 and \cf2 flow_step = \cf6 'valid_phone' \cf4 group by \cf7 1\cf2 ) f19 \cf4 on  \cf2 f1.session_long=f19.session_long\
+     \cf4 left join \cf2 (\cf4 select \cf2 session_long \cf4 from \cf2 ods.panameraolx_mea_hydra_ninja_android_last_month \cf4 where \cf2 trackevent=\cf6 'profile_completion_action' \cf4 and \cf2 country_sk=\cf6 'olx|mea|pk' \cf4 and \cf2 origin_nk = \cf6 'profile_bar' \cf4 and \cf2 chosen_option = \cf6 'skip' \cf4 and \cf2 flow_step = \cf6 'valid_phone' \cf4 group by \cf7 1\cf2 ) f20 \cf4 on  \cf2 f1.session_long=f20.session_long\
+     \cf4 left join \cf2 (\cf4 select \cf2 session_long \cf4 from \cf2 ods.panameraolx_mea_hydra_ninja_android_last_month \cf4 where \cf2 trackevent=\cf6 'profile_completion_action' \cf4 and \cf2 country_sk=\cf6 'olx|mea|pk' \cf4 and \cf2 origin_nk = \cf6 'profile_bar' \cf4 and \cf2 chosen_option = \cf6 'close' \cf4 and \cf2 flow_step = \cf6 'valid_phone' \cf4 group by \cf7 1\cf2 ) f21 \cf4 on  \cf2 f1.session_long=f21.session_long\
+\
+     \cf4 left join \cf2 (\cf4 select \cf2 session_long \cf4 from \cf2 ods.panameraolx_mea_hydra_ninja_android_last_month \cf4 where \cf2 trackevent=\cf6 'profile_completion_show'   \cf4 and \cf2 country_sk=\cf6 'olx|mea|pk' \cf4 and \cf2 origin_nk = \cf6 'profile_bar' \cf4 and \cf2 flow_step = \cf6 'social_account' \cf4 group by \cf7 1\cf2 ) f22 \cf4 on  \cf2 f1.session_long=f22.session_long\
+     \cf4 left join \cf2 (\cf4 select \cf2 session_long \cf4 from \cf2 ods.panameraolx_mea_hydra_ninja_android_last_month \cf4 where \cf2 trackevent=\cf6 'profile_completion_action' \cf4 and \cf2 country_sk=\cf6 'olx|mea|pk' \cf4 and \cf2 origin_nk = \cf6 'profile_bar' \cf4 and \cf2 chosen_option = \cf6 'continue' \cf4 and \cf2 flow_step = \cf6 'social_account' \cf4 group by \cf7 1\cf2 ) f23 \cf4 on  \cf2 f1.session_long=f23.session_long\
+     \cf4 left join \cf2 (\cf4 select \cf2 session_long \cf4 from \cf2 ods.panameraolx_mea_hydra_ninja_android_last_month \cf4 where \cf2 trackevent=\cf6 'profile_completion_action' \cf4 and \cf2 country_sk=\cf6 'olx|mea|pk' \cf4 and \cf2 origin_nk = \cf6 'profile_bar' \cf4 and \cf2 chosen_option = \cf6 'skip' \cf4 and \cf2 flow_step = \cf6 'social_account' \cf4 group by \cf7 1\cf2 ) f24 \cf4 on \cf2 f1.session_long=f24.session_long\
+     \cf4 left join \cf2 (\cf4 select \cf2 session_long \cf4 from \cf2 ods.panameraolx_mea_hydra_ninja_android_last_month \cf4 where \cf2 trackevent=\cf6 'profile_completion_action' \cf4 and \cf2 country_sk=\cf6 'olx|mea|pk' \cf4 and \cf2 origin_nk = \cf6 'profile_bar' \cf4 and \cf2 chosen_option = \cf6 'close' \cf4 and \cf2 flow_step = \cf6 'social_account' \cf4 group by \cf7 1\cf2 ) f25 \cf4 on  \cf2 f1.session_long=f25.session_long\
+\
+\cf4 select\
+  \cf2 t.*\cf4 ,m\cf2 .google\cf4 ,m\cf2 .facebook\cf4 ,m\cf2 .phone\cf4 ,m\cf2 .email\
+   \cf4 from \cf2 profile_completion_myaccount t\
+     \cf4 inner join \cf2 startes_by_myaccount_login \cf4 m on m\cf2 .session_long=t.session_long\
+\
+\
+\
+\cf4 select\
+  \cf2 error_message\cf4 ,\
+  \cf2 error_type\cf4 ,\
+  \cf2 error_origin\cf4 ,\
+  \cf2 error_key\cf4 ,\
+  \cf2 flow_step\cf4 ,\
+  count\cf2 (\cf4 distinct \cf2 session_long) \cf4 as \cf2 picture\
+  \cf4 from \cf2 ods.panameraolx_mea_hydra_ninja_android_last_month\
+   \cf4 where \cf2 country_sk= \cf6 'olx|mea|pk'\
+     \cf4 and \cf2 trackevent=\cf6 'profile_completion_error'\
+\cf4 group by \cf7 1\cf4 ,\cf7 2\cf4 ,\cf7 3\cf4 ,\cf7 4\cf4 ,\cf7 5\
+\
+\
+\
+\cf9 -------------------\
+\
+\cf4 drop table if exists \cf2 ids_con_picture\cf4 ;\
+select\
+  distinct\
+  \cf2 session_long\cf4 ,\
+  \cf2 date_event_nk\
+   \cf4 into temp \cf2 ids_con_picture\
+   \cf4 from \cf2 ods.panameraolx_mea_hydra_ninja_web_last_month\
+     \cf4 where \cf2 trackevent = \cf6 'profile_completion_action' \cf4 and \cf2 chosen_option = \cf6 'continue' \cf4 and \cf2 flow_step = \cf6 'has_picture'\
+\
+\cf4 drop table if exists \cf2 ids_con_nombre\cf4 ;\
+select\
+  distinct\
+  \cf2 session_long\cf4 ,\
+  \cf2 date_event_nk\
+   \cf4 into temp \cf2 ids_con_nombre\
+   \cf4 from \cf2 ods.panameraolx_mea_hydra_ninja_web_last_month\
+     \cf4 where \cf2 trackevent = \cf6 'profile_completion_action' \cf4 and \cf2 chosen_option = \cf6 'continue' \cf4 and \cf2 flow_step = \cf6 'valid_name'\
+\
+\
+\cf4 select\
+  distinct\
+    \cf2 b.session_long\cf4 ,\
+    \cf2 b.date_event_nk\
+   \cf4 from \cf2 ids_con_nombre b\
+     \cf4 inner join \cf2 ids_con_picture t \cf4 on \cf2 t.session_long=b.session_long\
+\
+\
+\
+\cf4 drop table if exists \cf2 ids_con_picture_android\cf4 ;\
+select\
+  distinct\
+  \cf2 session_long\cf4 ,\
+  \cf2 date_event_nk\
+   \cf4 into temp \cf2 ids_con_picture\
+   \cf4 from \cf2 ods.panameraolx_mea_hydra_ninja_android_last_month\
+     \cf4 where \cf2 trackevent = \cf6 'profile_completion_action' \cf4 and \cf2 chosen_option = \cf6 'continue' \cf4 and \cf2 flow_step = \cf6 'has_picture'\
+\
+\cf4 drop table if exists \cf2 ids_con_nombre_android\cf4 ;\
+select\
+  distinct\
+  \cf2 session_long\cf4 ,\
+  \cf2 date_event_nk\
+   \cf4 into temp \cf2 ids_con_nombre\
+   \cf4 from \cf2 ods.panameraolx_mea_hydra_ninja_android_last_month\
+     \cf4 where \cf2 trackevent = \cf6 'profile_completion_action' \cf4 and \cf2 chosen_option = \cf6 'continue' \cf4 and \cf2 flow_step = \cf6 'real_name'\
+\
+\cf4 select\
+  distinct\
+     \cf2 trackevent\cf4 ,\
+     \cf2 chosen_option\
+   \cf4 from \cf2 ods.panameraolx_mea_hydra_ninja_android_last_month\
+  \cf4 where \cf2 trackevent \cf4 like \cf6 '%profile%'\
+\
+\cf4 select\
+  \cf2 *\
+   \cf4 from \cf2 spectrum.hydra_p_olx_android\
+  \cf4 where \cf2 params_cc = \cf6 'in'\
+   \cf4 and year \cf2 = \cf7 2019\
+    \cf4 and month\cf2 =\cf7 6\
+    \cf4 and day\cf2 =\cf7 2\
+    \cf4 and hour\cf2 =\cf7 22\
+\cf9 --    and params_device_model is not null\
+\cf4 limit \cf7 100\
+\
+\
+\cf4 select\
+  count\cf2 (\cf4 distinct case when \cf2 params_en = \cf6 'app_open' \cf4 and month\cf2 =\cf7 6 \cf4 and day\cf2 =\cf7 2 \cf4 and hour\cf2 =\cf7 22 \cf4 and \cf2 params_v \cf4 like \cf6 '%13.15.02%'  \cf4 then \cf2 meta_session_long \cf4 else null end\cf2 ) \cf4 as \cf2 cantidad_de_session_long\cf4 ,\
+  count\cf2 (\cf4 distinct case when \cf2 ((params_en = \cf6 'app_open' \cf4 and month\cf2 =\cf7 6 \cf4 and day\cf2 =\cf7 2 \cf4 and hour\cf2 =\cf7 22 \cf4 and \cf2 params_device_model \cf4 is not null and \cf2 params_v \cf4 like \cf6 '%13.15.02%'\cf2 ) \cf4 or\
+                           \cf2 (params_en = \cf6 'app_open' \cf4 and month\cf2 =\cf7 6 \cf4 and day\cf2 =\cf7 2 \cf4 and hour\cf2 =\cf7 22 \cf4 and \cf2 params_device_info_model_device_model \cf4 is not null and \cf2 params_v \cf4 like \cf6 '%13.15.02%'\cf2 )) \cf4 then \cf2 meta_session_long \cf4 else null end\cf2 ) \cf4 as \cf2 cantidad_de_session_long_con_paramsnotnull\cf4 ,\
+  count\cf2 (\cf4 distinct case when \cf2 params_en = \cf6 'app_open' \cf4 and month\cf2 =\cf7 6 \cf4 and day\cf2 =\cf7 2 \cf4 and hour\cf2 =\cf7 22 \cf4 and \cf2 params_v \cf4 like \cf6 '%13.15.02%' \cf4 and \cf2 params_device_info_model_device_brand \cf4 is not null  then \cf2 meta_session_long \cf4 else null end\cf2 ) \cf4 as \cf2 cantidad_de_session_long_brand\
+    \cf4 from \cf2 spectrum.hydra_p_olx_android\
+\
+\cf9 -- params_device_info_model_device_brand : Brand\
+-- params_device_info_model_device_manufacturer: Brand\
+-- params_device_info_model_device_model : Model\
+\
+-- params_device_model : Model\
+\
+\
+\cf4 select\
+  \cf2 experiment_variant\cf4 ,\
+  \cf2 login_method\cf4 ,\
+  count\cf2 (\cf4 distinct \cf2 session_long)\
+   \cf4 from \cf2 ods.panameraolx_asia_hydra_ninja_android_last_month\
+  \cf4 where \cf2 trackevent = \cf6 'login_sign_in_complete'\
+\cf4 group by \cf7 1\cf4 ,\cf7 2\
+\
+\
+\cf4 select\
+  \cf2 date_nk \cf4 ,\
+  count\cf2 (\cf4 distinct \cf2 session_long) \cf4 as \cf2 users\
+   \cf4 from \cf2 ods.fact_user_hydra_browsing_activity\
+  \cf4 where \cf2 country_sk = \cf6 'olx|asia|in'\
+    \cf4 and \cf2 channel_sk \cf4 like \cf6 '%android%'\
+    \cf4 and \cf2 is_panamera = \cf4 true\
+    and \cf2 date_nk > \cf6 '2019-02-11'\
+  \cf4 group by \cf7 1\
+  \cf4 order by \cf7 1\
+\
+\
+\cf9 ----------------------------------------------------\
+\
+\cf4 select\
+  \cf2 *\
+  \cf4 from \cf2 ods.panameraolx_asia_\
+\
+\
+\cf4 select\
+  \cf2 date_event_nk\cf4 ,\
+  count\cf2 (\cf4 distinct \cf2 session_long) \cf4 as \cf2 dau\
+   \cf4 from \cf2 ods.panameraolx_mea_hydra_ninja_android_201905\
+ \cf4 where \cf2 chosen_option = \cf6 'profile_bar'\
+      \cf4 and \cf2 country_sk = \cf6 'olx|mea|pk'\
+\cf4 group by \cf7 1\
+\
+\
+\
+\cf4 select\
+  \cf2 date_event_nk\cf4 ,\
+  \cf2 app_version\cf4 ,\
+  count\cf2 (\cf4 case when \cf2 trackevent=\cf6 'onboarding_show' \cf4 and \cf2 experiment_variant \cf4 like \cf6 'mandatory%' \cf4 then \cf2 session_long \cf4 else null end\cf2 ) \cf4 as \cf2 mandatory\cf4 ,\
+  count\cf2 (\cf4 case when \cf2 trackevent=\cf6 'onboarding_show' \cf4 and \cf2 experiment_variant \cf4 like \cf6 'no%' \cf4 then \cf2 session_long \cf4 else null end\cf2 ) \cf4 as \cf2 no_mandatory\
+   \cf4 from \cf2 ods.panameraolx_asia_hydra_ninja_android_last_month\
+  \cf4 where \cf2 date_event_nk=\cf6 '2019-07-02'\
+\cf4 group by \cf7 1\cf4 ,\cf7 2\
+\
+\
+\
+\cf4 select\
+  \cf2 *\
+   \cf4 from \cf2 ods.panameraolx_asia_hydra_ninja_android_last_month\
+  \cf4 where \cf2 trackevent = \cf6 'messages_scheduler_started'\
+\cf4 limit \cf7 100\
+\
+\
+\
+\cf4 drop table if exists \cf2 mau\cf4 ;\
+select\
+  extract\cf2 (\cf4 year from \cf2 date_nk) \cf4 as year,\
+  extract\cf2 (\cf4 month from \cf2 date_nk) \cf4 as month,\
+  count\cf2 (\cf4 distinct \cf2 session_long) \cf4 as \cf2 MAU\
+   \cf4 into temp table \cf2 mau\
+   \cf4 from \cf2 ods.fact_user_hydra_browsing_activity\
+ \cf4 where\
+  \cf2 country_sk=\cf6 'olx|asia|in'\
+  \cf4 and \cf2 is_panamera = \cf4 true\
+group by \cf7 1\cf4 ,\cf7 2\
+\
+\cf4 ;drop table if exists \cf2 dau\cf4 ;\
+select\
+  \cf2 date_nk\cf4 ,\
+  count\cf2 (\cf4 distinct \cf2 session_long) \cf4 as \cf2 dau\
+  \cf4 into temp table \cf2 dau\
+   \cf4 from \cf2 ods.fact_user_hydra_browsing_activity\
+ \cf4 where \cf2 country_sk=\cf6 'olx|asia|in'\
+ \cf4 and \cf2 is_panamera = \cf4 true\
+group by \cf7 1\
+\
+\cf4 ;drop table if exists \cf2 month_of_mau\cf4 ;\
+select\
+  \cf2 date_nk\cf4 ,\
+  extract\cf2 (\cf4 year from \cf2 date_nk) \cf4 as year,\
+  extract\cf2 (\cf4 month from \cf2 date_nk) \cf4 as month,\
+  \cf2 dau\
+   \cf4 into temp table \cf2 month_of_mau\
+   \cf4 from \cf2 dau\
+\
+\cf4 ;drop table if exists \cf2 average_dau_of_month\cf4 ;\
+select\
+  year,\
+  month,\
+  \cf2 avg(dau) \cf4 as \cf2 mean_dau\
+   \cf4 from \cf2 month_of_mau\
+\cf4 group by \cf7 1\cf4 ,\cf7 2\cf4 ;\
+\
+select\
+  \cf2 a.year\cf4 ,\
+  \cf2 a.month\cf4 ,\
+  \cf2 mean_dau\cf4 ,\
+  \cf2 mau\
+   \cf4 from \cf2 mau a\
+    \cf4 left join \cf2 average_dau_of_month b \cf4 on \cf2 a.year=b.year \cf4 and \cf2 a.month=b.month\
+\cf4 order by \cf7 1\cf4 ,\cf7 2\
+\
+\
+\cf4 select \cf2 * \cf4 from \cf2 ods.dim_users \cf4 limit \cf7 100\
+\
+\
+\
+\cf4 with \cf2 new_buyers \cf4 as \cf2 (\cf4 select distinct \cf2 act.user_sk \cf4 from \cf2 ods.fact_user_platform_activity act \cf4 left join \cf2 ods.dim_users u \cf4 on \cf2 u.user_sk = act.user_sk\
+\cf4 where \cf2 act.country_sk = \cf6 'olx|asia|in' \cf4 and \cf2 act.date_nk \cf4 between \cf6 '2017-01-01' \cf4 and \cf6 '2017-01-31'\
+\cf4 and \cf2 u.date_created_nk \cf4 between \cf6 '2017-01-01' \cf4 and \cf6 '2017-01-31' \cf4 and \cf2 act.num_replies_sent > \cf7 0 \cf2 )\cf4 ,\
+     \cf2 raw_data \cf4 as \cf2 (\cf4 select count\cf2 (\cf4 distinct \cf2 r.reply_sk) replies\cf4 ,\
+        \cf2 r.user_sk\cf4 ,\
+       \cf2 r.date_sent_nk\
+       \cf4 from \cf2 ods.fact_replies r\
+     \cf4 inner join \cf2 new_buyers b \cf4 on \cf2 b.user_sk = r.user_sk\
+\
+\cf4 where \cf2 r.country_sk = \cf6 'olx|asia|in'\
+  \cf4 and \cf2 r.reply_num = \cf7 1 \cf4 and \cf2 r.reply_net_sk=\cf6 'net'\
+\cf4 and \cf2 r.date_sent_nk   >= \cf6 '2017-01-01' \cf4 and \cf2 r.date_sent_nk <= \cf6 '2018-12-31'\
+\cf4 group by \cf7 2\cf4 ,\cf7 3\cf2 )\
+\
+\cf4 select \cf2 * \cf4 from \cf2 raw_data \cf4 limit \cf7 100\cf4 ;\
+\
+\
+\
+select \cf2 * \cf4 from \cf2 spectrum.hydra_p_olx_android\
+\cf4 where\
+       year\cf2 =\cf7 2019 \cf4 and month\cf2 =\cf7 7 \cf4 and day\cf2 =\cf7 14 \cf4 and hour\cf2 =\cf7 20\
+     \cf4 and \cf2 params_device_info_model_device_brand \cf4 is not null\
+     and \cf2 params_cc = \cf6 'in'\
+\cf4 limit \cf7 100\
+\
+\
+\
+\
+\cf4 select\
+ \cf2 login_method\cf4 ,\
+ count\cf2 (\cf4 distinct \cf2 session_long) \cf4 as user\
+   from \cf2 ods.panameraolx_asia_hydra_ninja_ios_last_month\
+ \cf4 where \cf2 trackevent=\cf6 'login_sign_in_complete'\
+\cf4 group by \cf7 1\
+\
+\
+\
+\
+\cf4 drop table if exists \cf2 message_scheduler\cf4 ;\
+select\
+\cf2 *\
+   \cf4 from \cf2 ods.panameraolx_asia_hydra_ninja_android_last_month\
+ \cf4 where \cf2 trackevent \cf4 in \cf2 (\cf6 'chat_push_display'\cf2 )\
+\cf4 limit \cf7 100\
+\
+\
+\
+\cf4 select\
+  \cf2 *\
+   \cf4 from \cf2 ods.panameraolx_asia_hydra_ninja_android_last_month a\
+    \cf4 join \cf2 message_scheduler b \cf4 on \cf2 a.session_long=b.session_long \cf4 and \cf2 a.session_long_seq=b.session_long_seq\
+ \cf4 order by \cf2 session_long\cf4 ,\cf2 time_event_utc\
+\cf4 limit \cf7 500\
+\
+\cf4 select\
+   \cf2 meta_session_long\cf4 ,\
+\
+\
+ from \cf2 spectrum.hydra_p_olx_android \cf4 where year\cf2 =\cf7 2019 \cf4 and month\cf2 =\cf7 7 \cf4 and day\cf2 =\cf7 2 \cf4 and \cf2 params_cc = \cf6 'in'\
+ \cf4 and \cf2 params_device_info_model_device_brand \cf4 is not null\
+limit \cf7 100\
+\
+\cf4 select \cf2 * \cf4 from \cf2 spectrum.usercomms_lightning_outgoing_push \cf4 where year\cf2 =\cf7 2019 \cf4 and month\cf2 =\cf7 7 \cf4 and day\cf2 =\cf7 20 \cf4 and hour\cf2 =\cf7 18 \cf4 limit \cf7 100\
+\
+\
+\cf4 select\
+  \cf2 date_event_nk\cf4 ,\
+  count\cf2 (\cf4 distinct case when \cf2 trackevent \cf4 not in \cf2 (\cf6 'app_open'\cf4 , \cf6 'on_create'\cf4 , \cf6 'apps'\cf4 , \cf6 'push_dis'\cf4 ,\cf6 'pushDis'\cf4 , \cf6 'push_rcv'\cf4 , \cf6 'pushRcv'\cf4 , \cf6 'UAReg'\cf4 , \cf6 'ua_reg'\cf4 , \cf6 'uareg'\cf4 ,\cf6 'push_dismissed'\cf4 , \cf6 'push_show'\cf4 ,\cf6 'fetching_matrix'\cf4 , \cf6 'not_found'\cf4 ,\cf6 'permissions_impression'\cf4 ,\cf6 'userBadgeCount'\cf4 ,\cf6 'test_assignment'\cf4 ,\cf6 'test_impression'\cf4 ,\cf6 'test_discovered'\cf4 ,\cf6 'FCMReg'\cf4 ,\cf6 'APNSReg'\cf4 ,\cf6 'appOpn'\cf4 ,\cf6 'appOpen'\cf4 ,\cf6 'google_play_services'\cf4 ,\cf6 'fetchTestDefinitionsError'\cf4 ,\cf6 'messages_scheduler_ended'\cf4 ,\cf6 'messages_scheduler_started'\cf2 )\
+  \cf4 group by \cf7 1 \cf2 session_long) \cf4 as \cf2 dau_proxy\cf4 ,\
+  count\cf2 (\cf4 distinct case when \cf2 trackevent=\cf6 'push_show' \cf4 then \cf2 session_long \cf4 else null end\cf2 ) \cf4 as \cf2 user_pushes\cf4 ,\
+  count\cf2 (\cf4 case when \cf2 trackevent=\cf6 'push_show' \cf4 then \cf2 session_long \cf4 else null end\cf2 ) \cf4 as \cf2 amount_pushes\
+   \cf4 from \cf2 ods.panameraolx_asia_hydra_ninja_android_last_month\
+       \cf4 where \cf2 trackevent \cf4 not in \cf2 (\cf6 'app_open'\cf4 , \cf6 'on_create'\cf4 , \cf6 'apps'\cf4 , \cf6 'push_dis'\cf4 ,\cf6 'pushDis'\cf4 , \cf6 'push_rcv'\cf4 , \cf6 'pushRcv'\cf4 , \cf6 'UAReg'\cf4 , \cf6 'ua_reg'\cf4 , \cf6 'uareg'\cf4 ,\cf6 'push_dismissed'\cf4 , \cf6 'push_show'\cf4 ,\cf6 'fetching_matrix'\cf4 , \cf6 'not_found'\cf4 ,\cf6 'permissions_impression'\cf4 ,\cf6 'userBadgeCount'\cf4 ,\cf6 'test_assignment'\cf4 ,\cf6 'test_impression'\cf4 ,\cf6 'test_discovered'\cf4 ,\cf6 'FCMReg'\cf4 ,\cf6 'APNSReg'\cf4 ,\cf6 'appOpn'\cf4 ,\cf6 'appOpen'\cf4 ,\cf6 'google_play_services'\cf4 ,\cf6 'fetchTestDefinitionsError'\cf4 ,\cf6 'messages_scheduler_ended'\cf4 ,\cf6 'messages_scheduler_started'\cf2 )\
+  \cf4 group by \cf7 1\
+\
+\cf4 select\
+  \cf2 *\
+  \cf4 from \cf2 ods.panameraolx_asia_hydra_ninja_android_last_month\
+    \cf4 where \cf2 trackevent = \cf6 'push_Rcv'\
+\
+\
+\cf4 drop table if exists \cf2 l_outgoing\cf4 ;\
+select\
+   year,\
+   month,\
+   day,\
+   \cf2 params_provider_unique_message_id\
+\
+ \cf4 into temp table \cf2 l_outgoing\
+\cf4 from \cf2 spectrum.usercomms_lightning_outgoing_push\
+   \cf4 where \cf2 params_country_code = \cf6 'IN'\
+     \cf4 and year \cf2 = \cf7 2019 \cf4 and month in \cf2 (\cf7 7\cf4 ,\cf7 8\cf2 )\
+\cf4 group by \cf7 1\cf4 ,\cf7 2\cf4 ,\cf7 3\cf4 ,\cf7 4\
+\
+\cf4 drop table if exists \cf2 deliver\cf4 ;\
+select\
+  year,\
+  month,\
+  day,\
+  \cf2 params_provider_unique_message_id\cf4 ,\
+  \cf7 1 \cf4 as \cf2 salio\cf4 ,\
+  case when c\cf2 .push_id \cf4 is not null then \cf7 1 \cf4 else \cf7 0 \cf4 end as \cf2 llego\
+     \cf4 into temp table \cf2 deliver\
+   \cf4 from \cf2 l_outgoing a\
+   \cf4 left join \cf2 (\cf4 select  \cf2 push_id \cf4 from \cf2 ods.panameraolx_asia_hydra_ninja_android_last_month \cf4 where \cf2 trackevent=\cf6 'push_show' \cf4 group by \cf7 1\cf2 ) \cf4 c on c\cf2 .push_id=a.params_provider_unique_message_id\
+\
+\cf4 select\
+  year,\
+  month,\
+  day,\
+  \cf2 sum(salio) \cf4 as \cf2 pushes_android_sent\cf4 ,\
+  \cf2 sum(llego) \cf4 as \cf2 pushes_received\
+ \cf4 from \cf2 deliver\
+\cf4 group by \cf7 1\cf4 ,\cf7 2\cf4 ,\cf7 3\
+\cf9 ---\
+\
+\cf4 ;drop table if exists \cf2 treatment_B\cf4 ;\
+select\
+  \cf2 session_long\cf4 ,\
+  \cf2 date_event_nk\cf4 ,\
+  \cf2 time_event_utc\
+  \cf4 into temp table \cf2 treatment_B\
+    \cf4 from \cf2 ods.panameraolx_asia_hydra_ninja_android_last_month\
+  \cf4 where\
+    \cf2 trackevent = \cf6 'messages_scheduler_ended'\
+\cf4 group by \cf7 1\cf4 ,\cf7 2\cf4 ,\cf7 3\
+\
+\cf4 ;drop table if exists \cf2 users_step_1\cf4 ;\
+select\
+  \cf2 date_event_nk\cf4 ,\
+  count\cf2 (\cf4 distinct \cf2 session_long) \cf4 as \cf2 starter\
+  \cf4 into temp table \cf2 users_step_1\
+    \cf4 from \cf2 treatment_B\
+ \cf4 group by \cf7 1\
+\
+\cf4 ;drop table if exists \cf2 push_show\cf4 ;\
+select\
+  \cf2 a.session_long\cf4 ,\
+  \cf2 a.date_event_nk\cf4 ,\
+  \cf2 a.time_event_utc \cf4 as \cf2 time_scheduler\cf4 ,\
+  c\cf2 .time_event_utc \cf4 as \cf2 time_push_arrive\cf4 ,\
+  \cf2 datediff(\cf4 minute , c\cf2 .time_event_utc \cf4 , \cf2 a.time_event_utc)\
+  \cf4 into temp table \cf2 push_show\
+    \cf4 from \cf2 treatment_B a\
+      \cf4 join \cf2 (\cf4 select \cf2 session_long\cf4 , \cf2 date_event_nk\cf4 , \cf2 time_event_utc \cf4 from \cf2 ods.panameraolx_asia_hydra_ninja_android_last_month \cf4 where \cf2 trackevent = \cf6 'push_show' \cf4 and \cf2 date_event_nk > \cf6 '2019-07-10' \cf4 group by \cf7 1\cf4 ,\cf7 2\cf4 ,\cf7 3\cf2 ) \cf4 c on \cf2 a.session_long=\cf4 c\cf2 .session_long \cf4 and \cf2 a.date_event_nk=\cf4 c\cf2 .date_event_nk\
+  \cf4 where\
+    \cf2 datediff(\cf4 minute , c\cf2 .time_event_utc \cf4 , \cf2 a.time_event_utc) <= \cf7 10 \cf4 and \cf2 datediff(\cf4 minute , c\cf2 .time_event_utc \cf4 , \cf2 a.time_event_utc) >= \cf7 0\
+\
+\
+\cf4 ;drop table if exists \cf2 users_step_2\cf4 ;\
+select\
+    \cf2 date_event_nk\cf4 ,\
+  count\cf2 (\cf4 distinct \cf2 session_long) \cf4 as \cf2 push_show\
+  \cf4 into temp table \cf2 users_step_2\
+    \cf4 from \cf2 push_show\
+ \cf4 group by \cf7 1\
+\
+\cf4 ;drop table if exists \cf2 convirtio_en_dau\cf4 ;\
+select\
+  \cf2 a.session_long\cf4 ,\
+  \cf2 a.date_event_nk\
+   \cf4 into temp table \cf2 convirtio_en_dau\
+  \cf4 from \cf2 push_show a\
+    \cf4 join \cf2 (\cf4 select \cf2 session_long \cf4 , \cf2 date_nk \cf4 from \cf2 ods.fact_user_hydra_browsing_activity \cf4 where \cf2 country_sk = \cf6 'olx|asia|in' \cf4 and \cf2 is_panamera = \cf4 TRUE and \cf2 date_nk > \cf6 '2019-07-10' \cf4 group by \cf7 1\cf4 ,\cf7 2\cf2 ) b \cf4 on \cf2 a.session_long=b.session_long \cf4 and \cf2 a.date_event_nk=b.date_nk\
+\cf4 group by \cf7 1\cf4 ,\cf7 2\
+\
+\cf4 ;drop table if exists \cf2 users_step_3\cf4 ;\
+select\
+    \cf2 date_event_nk\cf4 ,\
+  count\cf2 (\cf4 distinct \cf2 session_long) \cf4 as \cf2 dau\
+  \cf4 into temp table \cf2 users_step_3\
+    \cf4 from \cf2 convirtio_en_dau\
+ \cf4 group by \cf7 1\cf4 ;\
+\
+select\
+  \cf2 date_event_nk\cf4 ,\
+  \cf2 a.starter\cf4 ,\
+  \cf2 b.push_show\cf4 ,\
+  c\cf2 .dau\
+       \cf4 from \cf2 users_step_1 a\
+\cf4 left join \cf2 users_step_2 b \cf4 on \cf2 a.date_event_nk=b.date_event_nk\
+\cf4 left join \cf2 users_step_3 \cf4 c on \cf2 a.date_event_nk=\cf4 c\cf2 .date_event_nk\
+\
+\
+\
+\
+\cf4 select\
+  \cf2 session_long\cf4 ,\
+  \cf2 date_nk\
+   \cf4 from \cf2 ods.fact_user_hydra_browsing_activity\
+\
+\
+\cf9 ---------------------------------\
+\cf4 select\
+  \cf2 date_nk\cf4 ,\
+  count\cf2 (\cf4 distinct case when \cf2 user_active_new_returning_nk = \cf6 'new' \cf4 then \cf2 session_long \cf4 else null end\cf2 ) \cf4 as \cf2 new_users\cf4 ,\
+  count\cf2 (\cf4 distinct \cf2 session_long) \cf4 as \cf2 total_users\
+  \cf4 from \cf2 ods.fact_user_hydra_browsing_activity\
+ \cf4 where \cf2 is_panamera = \cf4 true\
+   and \cf2 date_nk > \cf6 '2019-04-01'\
+   \cf4 and \cf2 country_sk \cf4 in \cf2 (\cf6 'olx|asia|in'\cf2 )\
+   \cf4 and \cf2 channel_sk \cf4 like \cf6 '%android%'\
+  \cf4 group by \cf7 1\
+  \cf4 order by \cf7 1\
+\
+\
+\
+\
+\cf9 -----------------------------------\
+-----------------------------------\
+\
+------ Retention to 7 days --------\
+\
+\
+\cf4 select\
+  extract\cf2 (\cf4 year from \cf2 date_nk) \cf4 as Year,\
+  extract\cf2 (\cf4 week from \cf2 date_nk) \cf4 as week,\
+  \cf2 country_sk\cf4 ,\
+  count\cf2 (\cf4 distinct \cf2 session_long) \cf4 as \cf2 MAU\
+   \cf4 from \cf2 ods.fact_user_hydra_browsing_activity\
+\cf4 where\
+  \cf2 country_sk \cf4 in \cf2 (\cf6 'olx|mea|pk' \cf4 , \cf6 'olx|asia|in'\cf2 )\
+  \cf4 and \cf2 date_nk >= \cf6 '2018-09-01'\
+\cf4 group by \cf7 1\cf4 ,\cf7 2\cf4 ,\cf7 3\
+\
+\
+\cf4 select\
+ \cf2 date_nk \cf4 ,\
+ count\cf2 (\cf4 distinct \cf2 session_long) \cf4 as \cf2 dau\
+   \cf4 from \cf2 ods.fact_user_hydra_browsing_activity\
+ \cf4 where \cf2 is_panamera = \cf4 true\
+  and \cf2 country_sk = \cf6 'olx|asia|in'\
+  \cf4 and \cf2 channel_sk \cf4 like \cf6 '%android%'\
+  \cf4 and \cf2 date_nk >= \cf6 '2019-05-01'\
+\cf4 group by \cf7 1\
+\
+\cf9 ---------------------------------------------------------------------\
+---------------------------------------------------------------------\
+\
+    \cf4 drop table if exists \cf2 tabla1\cf4 ;\
+          select  \cf2 session_long\cf4 ,\
+                  \cf2 test_name\cf4 ,\
+                  \cf2 test_variation \cf4 as \cf2 variation\cf4 ,\
+                  min \cf2 (date_event_nk) \cf4 as \cf2 first_exposition\
+           \cf4 into temp table \cf2 tabla1\
+          \cf4 from \cf2 ods.panameraolx_asia_hydra_ninja_android_last_month\
+          \cf4 where \cf2 country_sk=\cf6 'olx|asia|in'\
+          \cf4 and \cf2 trackevent=\cf6 'test_impression'\
+          \cf4 and \cf2 test_name \cf4 like \cf6 'pan-31472'\
+          \cf4 and \cf2 test_variation \cf4 is not null\
+          and \cf2 date_event_nk >= \cf6 '2019-07-11'\
+          \cf4 group by \cf7 1\cf4 ,\cf7 2\cf4 ,\cf7 3\
+\
+\
+    \cf4 ;drop table if exists \cf2 tabla2\cf4 ;\
+    select  \cf2 a.session_long\cf4 ,\
+           \cf2 a.test_name\cf4 ,\
+           \cf2 a.variation\cf4 ,\
+           \cf2 a.first_exposition \cf4 ,\
+           \cf2 b.first_exposition_2\cf4 ,\
+           \cf2 b.test_variation\cf4 ,\
+           count\cf2 (\cf4 distinct case when \cf2 b.test_variation \cf4 is not null then \cf2 b.session_long\
+                   \cf4 else null end\cf2 ) \cf4 as \cf2 count_dups\
+        \cf4 into temp \cf2 tabla2\
+     \cf4 from \cf2 tabla1 \cf4 as \cf2 a\
+    \cf4 left join\
+           \cf2 (\cf4 select \cf2 session_long\cf4 ,\cf2 test_variation\cf4 ,min\cf2 (date_event_nk) \cf4 as \cf2 first_exposition_2\
+           \cf4 from \cf2 ods.panameraolx_asia_hydra_ninja_android_last_month\
+           \cf4 where \cf2 country_sk=\cf6 'olx|asia|in'\
+          \cf4 and \cf2 trackevent=\cf6 'test_impression'\
+          \cf4 and \cf2 test_name \cf4 like \cf6 'pan-31472'\
+          \cf4 and \cf2 test_variation \cf4 is not null\
+          and \cf2 date_event_nk >= \cf6 '2019-07-11'\
+            \cf4 group by \cf7 1\cf4 ,\cf7 2\
+               \cf2 ) \cf4 as \cf2 b\
+    \cf4 on \cf2 a.session_long=b.session_long \cf4 and \cf2 a.variation != b.test_variation\
+    \cf4 group by \cf7 1\cf4 ,\cf7 2\cf4 ,\cf7 3\cf4 ,\cf7 4\cf4 ,\cf7 5\cf4 ,\cf7 6\
+\
+\
+\cf4 ;drop table if exists \cf2 session_long_table\cf4 ;\
+    select\
+      \cf2 a.session_long\cf4 ,\
+      \cf2 a.date_event_nk\cf4 ,\
+      \cf2 b.first_exposition\cf4 ,\
+      \cf2 b.variation\cf4 ,\
+      case when \cf2 a.date_event_nk>b.first_exposition \cf4 then \cf7 1 \cf4 else \cf7 0 \cf4 end as \cf2 user_exposure\
+      \cf4 into temp table \cf2 session_long_table\
+       \cf4 from \cf2 ods.panameraolx_asia_hydra_ninja_android_last_month a\
+         \cf4 join \cf2 (\cf4 select \cf2 session_long\cf4 ,\cf2 first_exposition\cf4 ,\cf2 variation \cf4 from \cf2 tabla2 \cf4 where \cf2 count_dups=\cf7 0 \cf4 group by \cf7 1\cf4 ,\cf7 2\cf4 ,\cf7 3\cf2 ) b \cf4 on \cf2 a.session_long=b.session_long\
+     \cf4 where\
+          \cf2 date_event_nk > \cf6 '2019-07-11'\
+      \cf4 group by \cf7 1\cf4 ,\cf7 2\cf4 ,\cf7 3\cf4 ,\cf7 4\cf4 ,\cf7 5\
+\
+\
+\cf4 ;drop table if exists \cf2 tabla3\cf4 ;\
+    select\
+      \cf2 session_long\cf4 ,\
+      \cf2 date_event_nk \cf4 as \cf2 date_scheduler_seen\
+       \cf4 into temp table \cf2 tabla3\
+       \cf4 from \cf2 ods.panameraolx_asia_hydra_ninja_android_last_month\
+        \cf4 where \cf2 trackevent=\cf6 'messages_scheduler_ended'\
+     \cf4 group by \cf7 1\cf4 ,\cf7 2\
+\
+\
+    \cf4 ;drop table if exists \cf2 push_show\cf4 ;\
+    select\
+      \cf2 session_long\cf4 ,\
+      \cf2 date_event_nk \cf4 as \cf2 date_push_receiver\cf4 ,\
+      \cf2 time_event_utc\
+       \cf4 into temp table \cf2 push_show\
+       \cf4 from \cf2 ods.panameraolx_asia_hydra_ninja_android_last_month\
+        \cf4 where \cf2 trackevent=\cf6 'push_show'\
+     \cf4 group by \cf7 1\cf4 ,\cf7 2\cf4 ,\cf7 3\
+\
+\cf4 ;drop table if exists \cf2 tabla4\cf4 ;\
+    select\
+      \cf2 a.*\cf4 ,\
+      case when \cf2 b.date_scheduler_seen \cf4 is not null then \cf7 1 \cf4 else \cf7 0 \cf4 end as \cf2 treatment\cf4 ,\
+      case when c\cf2 .date_push_receiver \cf4 is not null then \cf7 1 \cf4 else \cf7 0 \cf4 end as \cf2 recibio_push\cf4 ,\
+      c\cf2 .time_event_utc \cf4 as \cf2 time_receiving_push\
+      \cf4 into temp \cf2 tabla4\
+        \cf4 from \cf2 session_long_table a\
+          \cf4 left join \cf2 tabla3 b \cf4 on \cf2 a.session_long=b.session_long \cf4 and \cf2 a.date_event_nk=b.date_scheduler_seen\
+          \cf4 left join \cf2 push_show \cf4 c on \cf2 a.session_long=\cf4 c\cf2 .session_long \cf4 and \cf2 a.date_event_nk=\cf4 c\cf2 .date_push_receiver\cf4 ;\
+\
+select \cf2 * \cf4 from \cf2 tabla4 \cf4 order by \cf2 session_long\cf4 ,\cf2 date_event_nk \cf4 limit \cf7 100\
+\
+\cf4 drop table if exists \cf2 last_step_funnel\cf4 ;\
+        select\
+          \cf2 a.*\cf4 ,\
+          \cf2 b.time_event_utc\cf4 ,\
+          \cf2 datediff(\cf4 minute , \cf2 a.time_receiving_push \cf4 , \cf2 b.time_event_utc) \cf4 as \cf2 datediff\cf4 ,\
+          case when \cf2 (datediff(\cf4 minute , \cf2 a.time_receiving_push \cf4 , \cf2 b.time_event_utc) <= \cf7 1440 \cf4 and \cf2 datediff(\cf4 minute , \cf2 a.time_receiving_push \cf4 , \cf2 b.time_event_utc) >= \cf7 0\cf2 ) \cf4 or \cf2 b.session_long \cf4 is not null then \cf7 1 \cf4 else \cf7 0 \cf4 end as \cf2 convirtio_en_dau\
+           \cf4 into temp table \cf2 last_step_funnel\
+           \cf4 from \cf2 tabla4 a\
+             \cf4 left join \cf2 (\cf4 select c\cf2 .session_long \cf4 , \cf2 date_event_nk \cf4 , \cf2 time_event_utc\
+                         \cf4 from \cf2 ods.panameraolx_asia_hydra_ninja_android_last_month \cf4 c\
+                           join \cf2 (\cf4 select \cf2 session_long \cf4 from \cf2 tabla4 \cf4 group by \cf7 1\cf2 ) t \cf4 on \cf2 t.session_long=\cf4 c\cf2 .session_long\
+                             \cf4 where \cf2 trackevent \cf4 not in \cf2 (\cf6 'app_open'\cf4 , \cf6 'on_create'\cf4 , \cf6 'apps'\cf4 , \cf6 'push_dis'\cf4 ,\cf6 'pushDis'\cf4 , \cf6 'push_rcv'\cf4 , \cf6 'pushRcv'\cf4 , \cf6 'UAReg'\cf4 , \cf6 'ua_reg'\cf4 , \cf6 'uareg'\cf4 ,\cf6 'push_dismissed'\cf4 , \cf6 'push_show'\cf4 ,\cf6 'fetching_matrix'\cf4 , \cf6 'not_found'\cf4 ,\cf6 'permissions_impression'\cf4 ,\cf6 'userBadgeCount'\cf4 ,\cf6 'test_assignment'\cf4 ,\cf6 'test_impression'\cf4 ,\cf6 'test_discovered'\cf4 ,\cf6 'FCMReg'\cf4 ,\cf6 'APNSReg'\cf4 ,\cf6 'appOpn'\cf4 ,\cf6 'appOpen'\cf4 ,\cf6 'google_play_services'\cf4 ,\cf6 'fetchTestDefinitionsError'\cf4 ,\cf6 'messages_scheduler_ended'\cf4 ,\cf6 'messages_scheduler_started'\cf2 )\
+                         \cf4 and \cf2 date_event_nk>\cf6 '2019-07-22' \cf4 group by \cf7 1\cf4 ,\cf7 2\cf4 ,\cf7 3\cf2 ) b \cf4 on \cf2 a.session_long=b.session_long\
+\
+\
+\
+\cf4 select \cf2 * \cf4 from \cf2 ods.fact_resultset_performance \cf4 where \cf2 country_sk=\cf6 'olx|asia|in' \cf4 and \cf2 date_nk=\cf6 '2019-10-10' \cf4 limit \cf7 100\
+\
+\
+\cf4 select \cf2 * \cf4 from \cf2 ods.panameraolx_asia_hydra_ninja_android_last_month \cf4 where \cf2 app_version=\cf6 '13.25.01' \cf4 and \cf2 trackevent=\cf6 'view_listings' \cf4 limit \cf7 100\
+\
+\cf4 select\
+ \cf2 params_origin\cf4 ,\
+ \cf2 params_v\cf4 ,\
+ \cf2 params_resultset_type\cf4 ,\
+ count\cf2 (*)\
+\cf4 from \cf2 spectrum.hydra_p_olx_android\
+\cf4 where \cf2 params_en = \cf6 'view_listings'\
+ \cf4 and year\cf2 =\cf7 2019\
+ \cf4 and month\cf2 =\cf7 10\
+ \cf4 and day \cf2 = \cf7 27\
+ \cf4 and \cf2 params_v \cf4 like \cf6 '%13.25.004%'\
+\cf4 group by \cf7 1\cf4 ,\cf7 2\cf4 ,\cf7 3\
+\
+\cf9 -------------------------------------------------------------------------\
+--------------------------- BUNDLES -------------------------------------\
+-------------------------------------------------------------------------\
+\
+\cf4 select\
+ \cf2 *\
+\cf4 from \cf2 ods.panameraolx_mea_hydra_ninja_android_last_month\
+ \cf4 where\
+    \cf2 trackevent=\cf6 'view_listings' \cf4 and \cf2 app_version \cf4 like \cf6 '%13.25%' \cf4 and \cf2 date_event_nk = \cf6 '2019-10-25' \cf4 limit \cf7 100\
+\
+\
+\
+\cf4 drop table if exists \cf2 new_users\cf4 ;\
+select\
+  \cf2 user_sk\cf4 ,\
+  \cf2 country_sk\cf4 ,\
+  \cf2 date_nk\cf4 ,\
+  \cf2 app_version\
+   \cf4 into temp table \cf2 new_users\
+   \cf4 from \cf2 ods.fact_user_hydra_browsing_activity\
+ \cf4 where\
+       \cf2 country_sk \cf4 in \cf2 (\cf6 'olx|mea|za'\cf2 )\
+   \cf4 and \cf2 app_version \cf4 in \cf2 (\cf6 '13.25.002' \cf4 , \cf6 '13.25.004' \cf4 , \cf6 '13.25.003' \cf4 , \cf6 '13.23.03'\cf2 )\
+   \cf4 and \cf2 channel_sk = \cf6 'mobile_app|android'\
+   \cf4 and \cf2 user_sk != \cf6 'unknown'\
+\cf4 group by \cf7 1\cf4 ,\cf7 2\cf4 ,\cf7 3\cf4 ,\cf7 4\
+\
+\cf4 select \cf2 * \cf4 from \cf2 new_users \cf4 limit \cf7 100\
+\
+\cf4 ;drop table if exists \cf2 count_new_users\cf4 ;\
+select\
+  \cf2 date_nk\cf4 ,\
+  \cf2 country_sk\cf4 ,\
+  \cf2 app_version\cf4 ,\
+  count\cf2 (\cf4 distinct \cf2 user_sk) \cf4 as \cf2 dau\
+   \cf4 into temp table \cf2 count_new_users\
+       \cf4 from \cf2 new_users\
+\cf4 group by \cf7 1\cf4 ,\cf7 2\cf4 ,\cf7 3\
+\cf4 order by \cf7 2\cf4 ,\cf7 3\cf4 ,\cf7 1\
+\
+\
+\cf4 ;drop table if exists \cf2 dub\cf4 ;\
+select\
+  \cf2 date_sent_nk\cf4 ,\
+  \cf2 panamera_user_sk\cf4 ,\
+  \cf2 a.country_sk\
+   \cf4 into temp table \cf2 dub\
+  \cf4 from \cf2 ods.fact_replies a\
+\cf4 where\
+    \cf2 a.country_sk \cf4 in \cf2 (\cf6 'olx|mea|za'\cf2 )\
+\cf4 and \cf2 panamera_user_sk != \cf6 'unknown'\
+\cf4 and \cf2 reply_num_panamera=\cf7 1\
+\cf4 and \cf2 reply_channel_sk \cf4 like \cf6 '%android%'\
+\cf4 group by \cf7 1\cf4 ,\cf7 2\cf4 ,\cf7 3\
+\
+\cf4 select\
+ \cf2 a.*\cf4 ,\
+ \cf2 b.panamera_user_sk\cf4 ,\
+ \cf2 b.date_sent_nk\cf4 ,\
+ case when \cf2 b.date_sent_nk \cf4 is not null then \cf7 1 \cf4 else \cf7 0 \cf4 end as \cf2 dub\
+  \cf4 from \cf2 new_users a\
+  \cf4 left join \cf2 dub b \cf4 on \cf2 a.user_sk=b.panamera_user_sk \cf4 and \cf2 a.date_nk=b.date_sent_nk\
+\
+\
+\
+\
+\cf4 ;drop table if exists \cf2 new_dub\cf4 ;\
+select\
+  \cf2 date_nk\cf4 ,\
+  \cf2 session_long\cf4 ,\
+  \cf2 panamera_user_sk\cf4 ,\
+  \cf2 a.country_sk\cf4 ,\
+  \cf2 app_version\
+   \cf4 into temp table \cf2 new_dub\
+  \cf4 from \cf2 ods.fact_replies a\
+   \cf4 join \cf2 new_users b \cf4 on \cf2 a.panamera_user_sk=b.user_sk \cf4 and \cf2 a.country_sk=b.country_sk \cf4 and \cf2 b.user_sk!=\cf6 'unknown'\
+\cf4 where\
+    \cf2 a.country_sk \cf4 in \cf2 (\cf6 'olx|mea|za'\cf2 )\
+\cf4 and \cf2 reply_num_panamera=\cf7 1\
+\cf4 group by \cf7 1\cf4 ,\cf7 2\cf4 ,\cf7 3\cf4 ,\cf7 4\cf4 ,\cf7 5\
+\
+\cf4 select \cf2 * \cf4 from \cf2 ods.fact_replies \cf4 where \cf2 panamera_user_sk=\cf6 'olx|mea|za|platform|id|107657700'\
+\
+\cf4 select \cf2 * \cf4 from \cf2 new_dub \cf4 limit \cf7 100\
+\
+\cf4 ;drop table if exists \cf2 count_new_dub\cf4 ;\
+select\
+  \cf2 date_nk\cf4 ,\
+  \cf2 country_sk\cf4 ,\
+  \cf2 app_version\cf4 ,\
+  count\cf2 (\cf4 distinct \cf2 session_long) \cf4 as \cf2 new_dub\
+   \cf4 into temp table \cf2 count_new_dub\
+    \cf4 from \cf2 new_dub\
+ \cf4 group by \cf7 1\cf4 ,\cf7 2\cf4 ,\cf7 3\
+ \cf4 order by \cf7 2\cf4 ,\cf7 3\cf4 ,\cf7 1\
+\
+\cf4 select \cf2 * \cf4 from \cf2 count_new_dub \cf4 limit \cf7 100\
+\
+\cf4 ;drop table if exists \cf2 dau_and_dub\cf4 ;\
+select\
+  \cf2 a.*\cf4 ,\
+  \cf2 b.new_dub\
+  \cf4 into temp table \cf2 dau_and_dub\
+\cf4 from \cf2 count_new_users a\
+  \cf4 join \cf2 count_new_dub b \cf4 on \cf2 a.date_nk=b.date_nk \cf4 and \cf2 a.country_sk=b.country_sk \cf4 and \cf2 a.app_version=b.app_version\
+\
+\cf4 select \cf2 * \cf4 from \cf2 dau_and_dub \cf4 limit \cf7 100\
+\
+\
+\cf4 ;drop table if exists \cf2 new_dub_mc\cf4 ;\
+select\
+    \cf2 date_nk\cf4 ,\
+    \cf2 a.country_sk\cf4 ,\
+    \cf2 app_version\cf4 ,\
+    count\cf2 (\cf4 distinct \cf2 session_long) \cf4 as \cf2 new_dub_mc\
+   \cf4 into temp table \cf2 new_dub_mc\
+  \cf4 from \cf2 ods.fact_conversations_daily a\
+    \cf4 join \cf2 new_dub b \cf4 on \cf2 a.buyer_sk=b.panamera_user_sk \cf4 and \cf2 a.country_sk=b.country_sk\
+\cf4 where\
+      \cf2 interaction_num_in_conv=\cf7 6\
+  \cf4 and \cf2 a.country_sk = \cf6 '\{0\}'\
+  \cf4 and \cf2 date_sent_nk \cf4 between \cf6 '2019-09-01' \cf4 and \cf6 '2019-10-08'\
+  \cf4 and \cf2 datediff(\cf4 days , \cf2 date_sent_1st_msg_nk \cf4 , \cf2 date_nk) = \cf7 0\
+\cf4 group by \cf7 1\cf4 ,\cf7 2\cf4 ,\cf7 3\cf4 ;\
+\
+\
+select\
+ \cf2 a.*\cf4 ,\
+ \cf2 b.new_dub_mc\
+  \cf4 from \cf2 dau_and_dub a\
+   \cf4 join \cf2 new_dub_mc b \cf4 on \cf2 a.date_nk=b.date_nk \cf4 and \cf2 a.country_sk=b.country_sk \cf4 and \cf2 a.app_version=b.app_version\
+\
+\
+\cf9 ------------------\
+\
+\cf4 drop table if exists \cf2 dau\cf4 ;\
+select\
+ \cf2 meta_date\cf4 ,\
+ \cf2 meta_session_long\cf4 ,\
+ \cf2 params_v\
+  \cf4 into temp table \cf2 dau\
+     \cf4 from \cf2 spectrum.hydra_p_olx_android\
+\cf4 where \cf2 params_v \cf4 like \cf6 '%13.25%' \cf4 or \cf2 params_v \cf4 like \cf6 '%13.23.03%'\
+  \cf4 and \cf2 params_cc \cf4 like \cf6 '%za%'\
+\cf4 group by \cf7 1\cf4 ,\cf7 2\cf4 ,\cf7 3\
+\
+    \cf4 select \cf2 * \cf4 from \cf2 dau \cf4 limit \cf7 100\
+\
+\
+\
+\
+\
+\
+\
+\
+\
+\
+\
+\
+\cf4 select\
+ count\cf2 (\cf4 distinct \cf2 params_resultset_id) \cf4 as \cf2 home_searches\cf4 ,\
+ \cf2 sum(bundle) \cf4 as \cf2 bundle\cf4 ,\
+ \cf2 sum(bundle_fav) \cf4 as ,\
+ \cf2 sum(bundle_search)\cf4 ,\
+ \cf2 sum(bundle_nearbyads)\
+  \cf4 from \cf2 users_with_bundles\
+\
+\
+\
+\
+\
+\
+\cf4 select\
+    \cf2 *\
+\cf4 from \cf2 ods.fact_conversations_daily\
+\cf4 where \cf2 country_sk=\cf6 'olx|asia|in' \cf4 and \cf2 date_sent_1st_msg_nk=\cf6 '2019-07-01' \cf4 limit \cf7 100\
+\
+\cf9 --------------------------------------------------------------\
+--------------------------------------------------------------\
+-------------- Matriz para ver si hay social networks --------\
+\
+\cf4 drop table if exists \cf2 tabla1\cf4 ;\
+      select\
+              \cf2 split_part(user_sk \cf4 , \cf6 '|' \cf4 ,\cf7 6\cf2 ) \cf4 as \cf2 user_id\cf4 ,\
+              \cf2 test_name\cf4 ,\
+              \cf2 test_variation \cf4 as \cf2 variation\cf4 ,\
+              min \cf2 (date_event_nk) \cf4 as \cf2 first_exposition\
+       \cf4 into temp table \cf2 tabla1\
+      \cf4 from \cf2 ods.panameraolx_asia_hydra_ninja_android_last_month\
+      \cf4 where \cf2 country_sk=\cf6 'olx|asia|in'\
+      \cf4 and \cf2 trackevent=\cf6 'test_impression'\
+      \cf4 and \cf2 test_name \cf4 like \cf6 'pan-31472'\
+      \cf4 and \cf2 test_variation \cf4 is not null\
+      and \cf2 date_event_nk >= \cf6 '2019-07-11'\
+      \cf4 and \cf2 user_sk != \cf6 'unknown'\
+      \cf4 group by \cf7 1\cf4 ,\cf7 2\cf4 ,\cf7 3\
+\
+\
+\cf4 ;drop table if exists \cf2 tabla2\cf4 ;\
+select\
+       \cf2 a.user_id\cf4 ,\
+       \cf2 a.test_name\cf4 ,\
+       \cf2 a.variation\cf4 ,\
+       \cf2 a.first_exposition \cf4 ,\
+       \cf2 b.date_event_nk\cf4 ,\
+       \cf2 b.test_variation\cf4 ,\
+       count\cf2 (\cf4 distinct case when \cf2 b.test_variation \cf4 is not null then \cf2 b.user_id\
+               \cf4 else null end\cf2 ) \cf4 as \cf2 count_dups\
+    \cf4 into temp \cf2 tabla2\
+ \cf4 from \cf2 tabla1 \cf4 as \cf2 a\
+\cf4 left join\
+       \cf2 (\cf4 select \cf2 split_part(user_sk \cf4 , \cf6 '|' \cf4 , \cf7 6\cf2 ) \cf4 as \cf2 user_id \cf4 ,\cf2 date_event_nk\cf4 ,\cf2 test_variation\
+       \cf4 from \cf2 ods.panameraolx_asia_hydra_ninja_android_last_month\
+       \cf4 where \cf2 country_sk=\cf6 'olx|asia|in'\
+      \cf4 and \cf2 trackevent=\cf6 'test_impression'\
+      \cf4 and \cf2 test_name \cf4 like \cf6 'pan-31472'\
+      \cf4 and \cf2 test_variation \cf4 is not null\
+      and \cf2 date_event_nk >= \cf6 '2019-07-11'\
+      \cf4 and \cf2 user_sk != \cf6 'unknown'\
+      \cf2 ) \cf4 as \cf2 b\
+\cf4 on \cf2 a.user_id=b.user_id \cf4 and \cf2 b.date_event_nk>=first_exposition \cf4 and \cf2 a.variation != b.test_variation\
+\cf4 group by \cf7 1\cf4 ,\cf7 2\cf4 ,\cf7 3\cf4 ,\cf7 4\cf4 ,\cf7 5\cf4 ,\cf7 6\
+\
+\
+\cf4 ;drop table if exists \cf2 first_exposition_20190729\cf4 ;\
+select\
+ \cf2 *\
+ \cf4 into temp table \cf2 first_exposition_20190729\
+  \cf4 from \cf2 tabla2 a\
+ \cf4 where \cf2 count_dups=\cf7 0 \cf4 and \cf2 first_exposition=\cf6 '2019-07-29'\
+\
+\cf4 ;drop table if exists \cf2 cohort_scheduler\cf4 ;\
+select\
+  \cf2 session_long\cf4 ,\
+  count\cf2 (*) \cf4 as \cf2 qty_scheduler\
+  \cf4 into temp table \cf2 cohort_scheduler\
+    \cf4 from \cf2 ods.panameraolx_asia_hydra_ninja_android_last_month\
+ \cf4 where\
+     \cf2 trackevent=\cf6 'messages_scheduler_ended'\
+ \cf4 and \cf2 date_event_nk >= \cf6 '2019-07-29'\
+\cf4 group by \cf7 1\
+\
+\
+\cf4 ;drop table if exists \cf2 cantidad_de_conversaciones\cf4 ;\
+    select\
+      \cf2 conversation_nk\cf4 ,\
+      count\cf2 (*) \cf4 as \cf2 qty_messages\cf4 ,\
+      max\cf2 (interaction_num_in_conv) \cf4 as \cf2 max_interactions\cf4 ,\
+      count\cf2 (\cf4 case when \cf2 msg_type=\cf6 'buyer-seller' \cf4 then \cf2 conversation_nk \cf4 else null end\cf2 ) \cf4 as \cf2 buyer_qty_messager\cf4 ,\
+      count\cf2 (\cf4 case when \cf2 msg_type=\cf6 'seller-buyer' \cf4 then \cf2 conversation_nk \cf4 else null end\cf2 ) \cf4 as \cf2 seller_qty_messager\
+      \cf4 into temp table \cf2 cantidad_de_conversaciones\
+        \cf4 from \cf2 ods.fact_conversations_daily\
+     \cf4 where\
+                \cf2 country_sk \cf4 like \cf6 '%in%'\
+            \cf4 and \cf2 date_sent_nk >= \cf6 '2019-07-29'\
+    \cf4 group by \cf7 1\
+\
+\
+\cf4 ;drop table if exists \cf2 tabla7\cf4 ;\
+select\
+  \cf2 g.seller_id\cf4 ,\
+  \cf2 g.buyer_id\cf4 ,\
+  \cf2 e.seller_qty_messager\cf4 ,\
+  \cf2 e.buyer_qty_messager\cf4 ,\
+  \cf2 e.qty_messages\cf4 ,\
+  \cf2 e.max_interactions\
+   \cf4 into temp table \cf2 tabla7\
+  \cf4 from \cf2 cantidad_de_conversaciones e\
+    \cf4 left join \cf2 (\cf4 select \cf2 conversation_nk\cf4 ,\cf2 split_part(seller_sk \cf4 , \cf6 '|' \cf4 , \cf7 6\cf2 ) \cf4 as \cf2 seller_id\cf4 ,\cf2 split_part(buyer_sk \cf4 , \cf6 '|' \cf4 , \cf7 6\cf2 ) \cf4 as \cf2 buyer_id \cf4 from \cf2 ods.fact_conversations_daily \cf4 where \cf2 country_sk=\cf6 'olx|asia|in' \cf4 and \cf2 date_sent_nk>\cf6 '2019-07-01' \cf2 ) g \cf4 on \cf2 e.conversation_nk=g.conversation_nk\
+\
+\cf4 group by \cf7 1\cf4 ,\cf7 2\cf4 ,\cf7 3\cf4 ,\cf7 4\cf4 ,\cf7 5\cf4 ,\cf7 6\cf4 ;\
+\
+select\
+    \cf2 a.*\cf4 ,\
+    c\cf2 .variation \cf4 as \cf2 seller_variation\cf4 ,\
+    d\cf2 .variation \cf4 as \cf2 buyer_variation\
+       \cf4 from \cf2 tabla7 a\
+     \cf4 join \cf2 (\cf4 select \cf2 user_id\cf4 ,\cf2 first_exposition\cf4 , \cf2 variation \cf4 from \cf2 first_exposition_20190729  \cf4 group by \cf7 1\cf4 ,\cf7 2\cf4 ,\cf7 3\cf2 ) \cf4 c on \cf2 a.buyer_id=\cf4 c\cf2 .user_id\
+     \cf4 join \cf2 (\cf4 select \cf2 user_id\cf4 ,\cf2 first_exposition\cf4 , \cf2 variation \cf4 from \cf2 first_exposition_20190729  \cf4 group by \cf7 1\cf4 ,\cf7 2\cf4 ,\cf7 3\cf2 ) \cf4 d on \cf2 a.seller_id=\cf4 d\cf2 .user_id\
+\
+\
+\
+\
+\
+\cf4 select\
+  \cf2 date_nk \cf4 ,\
+  count\cf2 (\cf4 distinct \cf2 session_long) \cf4 as \cf2 dau\
+   \cf4 from \cf2 ods.fact_user_hydra_browsing_activity\
+\cf4 where \cf2 is_panamera=\cf4 true and \cf2 country_sk=\cf6 'olx|asia|in' \cf4 and \cf2 channel_sk \cf4 like \cf6 '%android%'\
+\cf4 group by \cf7 1\
+\
+\
+\cf4 drop table if exists \cf2 mensajes_chat\cf4 ;\
+select\
+ \cf2 date_sent_nk\cf4 ,\
+ count\cf2 (\cf4 distinct \cf2 message_id) \cf4 as \cf2 mensajes_de_chat\
+ \cf4 into temp table \cf2 mensajes_chat\
+  \cf4 from \cf2 ods.fact_conversations_daily \cf4 c\
+ where\
+    \cf2 country_sk=\cf6 'olx|asia|in'\
+ \cf4 and \cf2 date_sent_nk > \cf6 '2019-07-01'\
+\cf4 group by \cf7 1\
+\
+\cf4 drop table if exists \cf2 dau\cf4 ;\
+select\
+  \cf2 date_nk\cf4 ,\
+  count\cf2 (\cf4 distinct \cf2 session_long) \cf4 as \cf2 dau\
+  \cf4 into temp table \cf2 dau\
+   \cf4 from \cf2 ods.fact_user_hydra_browsing_activity\
+ \cf4 where \cf2 country_sk=\cf6 'olx|asia|in' \cf4 and \cf2 is_panamera=\cf4 true\
+ and \cf2 date_nk > \cf6 '2019-07-01'\
+\cf4 group by \cf7 1\
+\
+\cf4 select\
+  \cf2 date_nk\cf4 ,\
+  \cf2 dau\cf4 ,\
+  \cf2 mensajes_de_chat\
+       \cf4 from \cf2 dau a\
+   \cf4 join \cf2 mensajes_chat b \cf4 on \cf2 a.date_nk=b.date_sent_nk\
+\
+\
+\cf4 drop table if exists \cf2 noDAU\cf4 ;\
+select\
+   \cf2 date_event_nk\cf4 ,\cf2 session_long\
+\cf4 into temp table \cf2 noDAU\
+    \cf4 from \cf2 ods.panameraolx_asia_hydra_ninja_android_201907\
+\cf4 where \cf2 date_event_nk > \cf6 '2019-07-05'\
+\cf4 group by \cf7 1\cf4 ,\cf7 2\
+\cf4 having \cf2 sum(\cf4 case when \cf2 trackevent \cf4 in \cf2 (\cf6 'app_open'\cf4 , \cf6 'on_create'\cf4 , \cf6 'apps'\cf4 , \cf6 'push_dis'\cf4 ,\cf6 'pushDis'\cf4 , \cf6 'push_rcv'\cf4 , \cf6 'pushRcv'\cf4 , \cf6 'UAReg'\cf4 , \cf6 'ua_reg'\cf4 , \cf6 'uareg'\cf4 ,\cf6 'push_dismissed'\cf4 , \cf6 'push_show'\cf4 ,\cf6 'fetching_matrix'\cf4 , \cf6 'not_found'\cf4 ,\cf6 'permissions_impression'\cf4 ,\cf6 'userBadgeCount'\cf4 ,\cf6 'test_assignment'\cf4 ,\cf6 'test_impression'\cf4 ,\cf6 'test_discovered'\cf4 ,\cf6 'FCMReg'\cf4 ,\cf6 'APNSReg'\cf4 ,\cf6 'appOpn'\cf4 ,\cf6 'appOpen'\cf4 ,\cf6 'google_play_services'\cf4 ,\cf6 'fetchTestDefinitionsError'\cf4 ,\cf6 'messages_scheduler_ended'\cf4 ,\cf6 'messages_scheduler_started'\cf2 )\
+       \cf4 then \cf7 0 \cf4 else \cf7 1 \cf4 end\cf2 ) = \cf7 0\cf4 ;\
+select\
+   \cf2 date_nk\cf4 , count\cf2 (\cf4 distinct \cf2 a.session_long) \cf4 as \cf2 exDAU\cf4 , \cf9 -- dau inflado\
+       \cf4 count\cf2 (\cf4 distinct case when \cf2 b.session_long \cf4 is null then \cf2 a.session_long \cf4 else null end\cf2 ) \cf4 as \cf2 DAU \cf9 -- dau posta\
+    \cf4 from \cf2 ods.fact_user_hydra_browsing_activity a\
+\cf4 left join \cf2 noDAU b\
+\cf4 on \cf2 a.session_long=b.session_long \cf4 and \cf2 a.date_nk= b.date_event_nk\
+\cf4 where \cf2 a.date_nk > \cf6 '2019-07-10'\
+\cf4 and \cf2 country_sk = \cf6 'olx|asia|in' \cf9 -- Pais\
+\cf4 and \cf2 channel_sk \cf4 like \cf6 '%android%'\
+\cf4 group by \cf7 1\
+\cf4 order by \cf7 1 \cf4 desc;\
+\
+\
+    WITH \cf2 starters \cf4 AS \cf2 (\
+        \cf4 SELECT session\
+    from \cf2 ods.panameraolx_asia_hydra_ninja_android_last_month\
+    \cf4 WHERE \cf2 trackevent \cf4 in \cf2 (\cf6 'onboarding_show'\cf4 ,\cf6 'login_show'\cf2 ) \cf4 and \cf2 country_sk=\cf6 'olx|asia|id'\
+    \cf2 )\
+    \cf4 SELECT\
+      \cf2 date_event_nk\cf4 ,\
+      COUNT\cf2 (\cf4 DISTINCT CASE WHEN \cf2 trackevent \cf4 in \cf2 (\cf6 'onboarding_show'\cf4 ,\cf6 'login_show'\cf2 ) \cf4 THEN \cf2 session_long \cf4 ELSE NULL END\cf2 ) \cf4 AS \cf2 onboarding_y_login_show\cf4 ,\
+      COUNT\cf2 (\cf4 DISTINCT CASE WHEN \cf2 trackevent = \cf6 'login_sign_in_complete' \cf4 THEN \cf2 session_long \cf4 ELSE NULL END\cf2 ) \cf4 AS \cf2 login_sign_in_complete\
+    \cf4 FROM \cf2 ods.panameraolx_asia_hydra_ninja_android_last_month \cf4 h\
+    INNER JOIN \cf2 starters t \cf4 ON h\cf2 .session=t.session\
+       \cf4 where \cf2 country_sk=\cf6 'olx|asia|id'\
+     \cf4 group by \cf7 1\
+\
+\
+\cf4 WITH \cf2 verified \cf4 AS \cf2 (\
+    \cf4 SELECT session\
+from \cf2 ods.panameraolx_asia_hydra_ninja_android_last_month\
+\cf4 WHERE \cf2 trackevent \cf4 in \cf2 (\cf6 'login_start'\cf2 ) \cf4 and \cf2 country_sk=\cf6 'olx|asia|id'\
+\cf2 )\
+\cf4 SELECT\
+  \cf2 date_event_nk\cf4 ,\
+  COUNT\cf2 (\cf4 DISTINCT CASE WHEN \cf2 trackevent \cf4 in \cf2 (\cf6 'login_start'\cf2 ) \cf4 THEN \cf2 session_long \cf4 ELSE NULL END\cf2 ) \cf4 AS \cf2 onboarding_y_login_show\cf4 ,\
+  COUNT\cf2 (\cf4 DISTINCT CASE WHEN \cf2 trackevent = \cf6 'login_success' \cf4 THEN \cf2 session_long \cf4 ELSE NULL END\cf2 ) \cf4 AS \cf2 login_sign_in_complete\
+\cf4 FROM \cf2 ods.panameraolx_asia_hydra_ninja_android_last_month \cf4 h\
+INNER JOIN \cf2 verified t \cf4 ON h\cf2 .session=t.session\
+  \cf4 where \cf2 country_sk=\cf6 'olx|asia|id'\
+ \cf4 group by \cf7 1\
+\
+\cf9 -----------------------------------------------------------------------------------------------------------\
+---------------------------------------- DAU --------------------------------------------------------------\
+-----------------------------------------------------------------------------------------------------------\
+\
+\cf4 select\
+ \cf2 login_method\cf4 ,\
+ \cf2 error_message\cf4 ,\
+ count\cf2 (\cf4 distinct \cf2 session_long) \cf4 as \cf2 qty_users\
+  \cf4 from \cf2 ods.panameraolx_asia_hydra_ninja_android_last_month\
+ \cf4 where \cf2 trackevent=\cf6 'login_errors' \cf4 and \cf2 country_sk = \cf6 'olx|asia|id'\
+\cf4 group by \cf7 1\cf4 ,\cf7 2\
+\cf4 order by \cf7 3 \cf4 desc\
+\
+\
+\cf9 --------------------------------------------------------------------------------------------------\
+\
+\cf4 select\
+  \cf2 *\
+  \cf4 from \cf2 ods.panameraolx_asia_hydra_ninja_android_last_month\
+\cf4 where \cf2 trackevent=\cf6 'permissions_tap_allow' \cf4 limit \cf7 100\
+\
+\
+\cf4 drop table if exists \cf2 gps_prendido_o_no\cf4 ;\
+select\
+  year\cf2 ||\cf6 '-'\cf2 ||\cf4 month\cf2 ||\cf6 '-'\cf2 ||\cf4 day as \cf2 date_nk\cf4 ,\
+  count\cf2 (\cf4 distinct case when \cf2 params_gps_on_off = \cf6 'true' \cf4 then \cf2 meta_session_long \cf4 else null end\cf2 ) \cf4 as \cf2 gps_prendido\cf4 ,\
+  count\cf2 (\cf4 distinct case when \cf2 params_gps_on_off = \cf6 'false' \cf4 then \cf2 meta_session_long \cf4 else null end\cf2 ) \cf4 as \cf2 gps_no_prendido\cf4 ,\
+  count\cf2 (\cf4 distinct \cf2 meta_session_long) \cf4 as \cf2 users\
+       \cf4 from \cf2 spectrum.hydra_p_olx_android\
+\cf4 where\
+   \cf2 params_en = \cf6 'app_open'\
+  \cf4 and year\cf2 =\cf7 2019\
+  \cf4 and month\cf2 =\cf7 8\
+  \cf4 and day\cf2 =\cf7 16\
+  \cf4 and \cf2 meta_session_long_count = \cf7 1\
+ \cf4 and \cf2 params_cc = \cf6 'in'\
+\cf4 group by \cf7 1\
+\cf4 order by \cf7 1\
+\
+\cf9 -- Identificacion de gps\
+\cf4 drop table if exists \cf2 gps\cf4 ;\
+select\
+  \cf2 meta_session_long\cf4 ,\
+  case\
+    when \cf2 params_gps_on_off = \cf6 'true' \cf4 then \cf6 'gps_prendido'\
+    \cf4 when \cf2 params_gps_on_off = \cf6 'false' \cf4 then \cf6 'gps_apagado'\
+     \cf4 else \cf6 'ni_idea' \cf4 end as \cf2 type_gps\cf4 ,\
+  \cf2 params_lat\cf4 ,\
+  \cf2 params_long\cf4 ,\
+  \cf2 params_device_info_model_device_brand\
+   \cf4 into temp table \cf2 gps\
+  \cf4 from \cf2 spectrum.hydra_p_olx_android\
+\cf4 where    \cf2 params_en = \cf6 'app_open'\
+  \cf4 and year\cf2 =\cf7 2019\
+  \cf4 and month\cf2 =\cf7 7\
+  \cf4 and day\cf2 =\cf7 5\
+  \cf4 and \cf2 meta_session_long_count = \cf7 1\
+  \cf4 and \cf2 params_cc = \cf6 'in'\
+  \cf4 and \cf2 split_part(params_v \cf4 , \cf6 '-' \cf4 , \cf7 2\cf2 ) != \cf6 '13.19.02'\
+\cf4 group by \cf7 1\cf4 ,\cf7 2\cf4 ,\cf7 3\cf4 ,\cf7 4\cf4 ,\cf7 5\
+\
+\
+\cf9 -- Indentificacion de que se logeo\
+\cf4 drop table if exists \cf2 logging\cf4 ;\
+select\
+  \cf2 meta_session_long\cf4 ,\
+  \cf2 params_login_method\
+   \cf4 into temp table \cf2 logging\
+   \cf4 from \cf2 spectrum.hydra_p_olx_android\
+\cf4 where\
+     \cf2 params_en = \cf6 'login_sign_in_complete'\
+  \cf4 and year\cf2 =\cf7 2019\
+  \cf4 and month\cf2 =\cf7 7\
+  \cf4 and day\cf2 =\cf7 5\
+  \cf4 and \cf2 meta_session_long_count = \cf7 1\
+  \cf4 and \cf2 params_cc = \cf6 'in'\
+\cf4 group by \cf7 1\cf4 ,\cf7 2\
+\
+\
+\cf9 -- Indentificacion de usuario que skipeo el logging\
+\cf4 drop table if exists \cf2 skip_logging\cf4 ;\
+select\
+  \cf2 meta_session_long\
+   \cf4 into temp table \cf2 skip_logging\
+   \cf4 from \cf2 spectrum.hydra_p_olx_android\
+\cf4 where\
+     \cf2 params_en = \cf6 'onboarding_tap_not_now'\
+  \cf4 and year\cf2 =\cf7 2019\
+  \cf4 and month\cf2 =\cf7 7\
+  \cf4 and day\cf2 =\cf7 5\
+  \cf4 and \cf2 meta_session_long_count = \cf7 1\
+  \cf4 and \cf2 params_cc = \cf6 'in'\
+\cf4 group by \cf7 1\
+\
+\
+\cf9 -- Identificacion de personas que tapearon sobre el location complete\
+\cf4 drop table if exists \cf2 tap_location\cf4 ;\
+select\
+  \cf2 meta_session_long\
+   \cf4 into temp table \cf2 tap_location\
+   \cf4 from \cf2 spectrum.hydra_p_olx_android\
+\cf4 where\
+     \cf2 params_en = \cf6 'location_complete'\
+  \cf4 and \cf2 params_select_from = \cf6 'home'\
+  \cf4 and year\cf2 =\cf7 2019\
+  \cf4 and month\cf2 =\cf7 7\
+  \cf4 and day\cf2 =\cf7 5\
+  \cf4 and \cf2 meta_session_long_count = \cf7 1\
+  \cf4 and \cf2 params_cc = \cf6 'in'\
+  \cf9 --and params_extra_place_selected_id\
+\cf4 group by \cf7 1\
+\
+\
+\cf9 -- Usuarios que dieron deny\
+\cf4 drop table if exists \cf2 deny_location\cf4 ;\
+select\
+  \cf2 meta_session_long\
+   \cf4 into temp table \cf2 deny_location\
+   \cf4 from \cf2 spectrum.hydra_p_olx_android\
+\cf4 where\
+     \cf2 params_en = \cf6 'permissions_tap_deny'\
+  \cf4 and \cf2 params_permission_for = \cf6 'location'\
+  \cf4 and year\cf2 =\cf7 2019\
+  \cf4 and month\cf2 =\cf7 7\
+  \cf4 and day\cf2 =\cf7 5\
+  \cf4 and \cf2 meta_session_long_count = \cf7 1\
+  \cf4 and \cf2 params_cc = \cf6 'in'\
+\cf4 group by \cf7 1\
+\
+\cf9 -- Usuarios que dieron allow\
+\cf4 drop table if exists \cf2 allow_location\cf4 ;\
+select\
+  \cf2 meta_session_long\
+   \cf4 into temp table \cf2 allow_location\
+   \cf4 from \cf2 spectrum.hydra_p_olx_android\
+\cf4 where\
+     \cf2 params_en = \cf6 'permissions_tap_allow'\
+  \cf4 and \cf2 params_permission_for = \cf6 'location'\
+  \cf4 and year\cf2 =\cf7 2019\
+  \cf4 and month\cf2 =\cf7 7\
+  \cf4 and day\cf2 =\cf7 5\
+  \cf4 and \cf2 meta_session_long_count = \cf7 1\
+  \cf4 and \cf2 params_cc = \cf6 'in'\
+\cf4 group by \cf7 1\
+\
+\cf9 -- Lat and longs identifications\
+\cf4 drop table if exists \cf2 lat_and_longs\cf4 ;\
+select\
+   \cf2 meta_session_long\cf4 ,\
+   \cf2 params_lat\cf4 ,\
+   \cf2 params_long\cf4 ,\
+   count\cf2 (*) \cf4 as \cf2 cantidad_usuarios\
+      \cf4 into temp table \cf2 lat_and_longs\
+    \cf4 from \cf2 spectrum.hydra_p_olx_android\
+\cf4 where\
+      year\cf2 =\cf7 2019\
+  \cf4 and month\cf2 =\cf7 7\
+  \cf4 and day\cf2 =\cf7 5\
+  \cf4 and \cf2 meta_session_long_count = \cf7 1\
+  \cf4 and \cf2 params_cc = \cf6 'in'\
+\cf4 group by \cf7 1\cf4 ,\cf7 2\cf4 ,\cf7 3\
+\
+\
+\
+\cf9 -- Lat and longs maximos\
+\cf4 drop table if exists \cf2 max_lat_and_longs\cf4 ;\
+select\
+  \cf2 meta_session_long\cf4 ,\
+  \cf2 params_lat\cf4 ,\
+  \cf2 params_long\cf4 ,\
+  max\cf2 (cantidad_usuarios)\
+   \cf4 into temp table \cf2 max_lat_and_longs\
+    \cf4 from \cf2 lat_and_longs\
+  \cf4 group by \cf7 1\cf4 ,\cf7 2\cf4 ,\cf7 3\
+\
+\cf9 -- Keep one max lat and long\
+\cf4 drop table if exists \cf2 keepone_max_lat_and_longs\cf4 ;\
+select \cf2 * \cf4 into temp table \cf2 keepone_max_lat_and_longs \cf4 from \cf2 (\
+\cf4 select\
+  \cf2 a.*\cf4 ,\
+  \cf2 row_number() \cf4 over \cf2 (\cf4 partition by \cf2 meta_session_long) \cf4 as \cf2 rn\
+   \cf4 from \cf2 max_lat_and_longs a) t\
+ \cf4 where \cf2 t.rn = \cf7 1\
+\
+\cf4 drop table if exists \cf2 last_table\cf4 ;\
+select\
+  \cf2 a.meta_session_long\cf4 ,\
+  \cf2 a.type_gps\cf4 ,\
+  \cf2 lower(a.params_device_info_model_device_brand) \cf4 as \cf2 brand\cf4 ,\
+  case when d\cf2 .meta_session_long \cf4 is not null then \cf7 1 \cf4 else \cf7 0 \cf4 end as \cf2 skipeo_logging\cf4 ,\
+  case when \cf2 b.params_login_method \cf4 is not null then \cf7 1 \cf4 else \cf7 0 \cf4 end as \cf2 logeo\cf4 ,\
+  case when \cf2 b.params_login_method \cf4 is not null then \cf2 b.params_login_method \cf4 else \cf6 'no_log' \cf4 end as \cf2 login_method\cf4 ,\
+  case when c\cf2 .meta_session_long \cf4 is not null then \cf7 1 \cf4 else \cf7 0 \cf4 end as \cf2 deny_location\cf4 ,\
+  case when \cf2 i.meta_session_long \cf4 is not null then \cf7 1 \cf4 else \cf7 0 \cf4 end as \cf2 allow_location\cf4 ,\
+  case when \cf2 j.meta_session_long \cf4 is not null then \cf7 1 \cf4 else \cf7 0 \cf4 end as \cf2 tap_location_home\cf4 ,\
+  h\cf2 .params_lat\cf4 ,\
+  h\cf2 .params_long\
+  \cf4 into temp table \cf2 last_table\
+    \cf4 from \cf2 gps a\
+     \cf4 left join \cf2 logging b \cf4 on \cf2 a.meta_session_long=b.meta_session_long\
+     \cf4 left join \cf2 deny_location \cf4 c on \cf2 a.meta_session_long=\cf4 c\cf2 .meta_session_long\
+     \cf4 left join \cf2 allow_location i \cf4 on \cf2 a.meta_session_long=i.meta_session_long\
+     \cf4 left join \cf2 skip_logging \cf4 d on \cf2 a.meta_session_long=\cf4 d\cf2 .meta_session_long\
+     \cf4 left join \cf2 tap_location j \cf4 on \cf2 a.meta_session_long=j.meta_session_long\
+     \cf4 left join \cf2 keepone_max_lat_and_longs \cf4 h on \cf2 a.meta_session_long=\cf4 h\cf2 .meta_session_long\
+ \cf4 group by \cf7 1\cf4 ,\cf7 2\cf4 ,\cf7 3\cf4 ,\cf7 4\cf4 ,\cf7 5\cf4 ,\cf7 6\cf4 ,\cf7 7\cf4 ,\cf7 8\cf4 ,\cf7 9\cf4 ,\cf7 10\cf4 ,\cf7 11\
+\
+\cf4 select \cf2 * \cf4 from \cf2 last_table \cf4 order by \cf2 meta_session_long \cf4 limit \cf7 100\
+\
+\cf4 drop table if exists \cf2 logeo_o_skipeador\cf4 ;\
+select\
+    distinct \cf2 meta_session_long\cf4 ,\
+        \cf2 tap_location_home\
+  \cf4 into temp table \cf2 logeo_o_skipeador\
+  \cf4 from \cf2 last_table\
+ \cf4 where\
+    \cf2 logeo = \cf7 1 \cf4 or \cf2 skipeo_logging = \cf7 1\
+\
+\cf4 select\
+ count\cf2 (\cf4 distinct \cf2 meta_session_long)\
+  \cf4 from \cf2 logeo_o_skipeador\
+\cf4 where \cf2 tap_location_home = \cf7 1\
+\
+\cf4 select\
+ \cf2 type_gps\cf4 ,\
+ \cf2 params_device_info_model_device_brand \cf4 as \cf2 brand\cf4 ,\
+ count\cf2 (\cf4 distinct \cf2 meta_session_long) \cf4 as \cf2 users\
+  \cf4 from \cf2 last_table\
+\cf4 group by \cf7 1\cf4 ,\cf7 2\
+\
+\
+\cf9 --\
+-- logeadores o skipeadores : 88624\
+-- tapeadores de location : 17969\
+-- 20% tapea en location_start 1st session\
+\
+\
+\cf4 select\
+  \cf2 type_gps\cf4 ,\
+  \cf2 deny_location\cf4 ,\
+  count\cf2 (\cf4 distinct \cf2 meta_session_long)\
+   \cf4 from \cf2 last_table\
+ \cf4 where \cf2 login_method \cf4 in \cf2 (\cf6 'google' \cf4 , \cf6 'facebook'\cf2 ) \cf4 or \cf2 skipeo_logging = \cf7 1\
+\cf4 group by \cf7 1\cf4 ,\cf7 2\
+\
+\cf9 -- Fijarse que onda el allow\
+-- Cuantos estan a country level : india...\
+\
+\cf4 select TIMESTAMP \cf6 'epoch' \cf2 + params_t \cf4 , \cf2 meta_session_long \cf4 , \cf2 meta_session \cf4 , \cf2 meta_session_count \cf4 , \cf2 params_lat \cf4 , \cf2 params_long \cf4 , \cf2 params_en \cf4 ,\cf2 params_gps_on_off \cf4 from \cf2 spectrum.hydra_p_olx_android\
+\cf4 where \cf2 params_cc = \cf6 'in' \cf4 and year\cf2 =\cf7 2019 \cf4 and month\cf2 =\cf7 8 \cf4 and day\cf2 =\cf7 16 \cf4 and \cf2 meta_session_long_count=\cf7 1 \cf4 and \cf2 meta_session_long = \cf6 '16c9bda6466xc4fd6c02'\
+\cf4 order by \cf2 params_t\
+\cf4 limit \cf7 1000\
+\
+\cf4 select \cf2 split_part(params_v \cf4 , \cf6 '-' \cf4 ,\cf7 2\cf2 ) \cf4 as \cf2 app_version \cf4 , count\cf2 (\cf4 distinct \cf2 meta_session_long)\
+  \cf4 from \cf2 spectrum.hydra_p_olx_android\
+\cf4 where \cf2 params_cc = \cf6 'in' \cf4 and year\cf2 =\cf7 2019 \cf4 and month\cf2 =\cf7 8 \cf4 and day\cf2 =\cf7 16\
+\cf4 group by \cf7 1\
+\cf4 order by \cf7 2 \cf4 desc\
+limit \cf7 100\
+\
+\
+\
+\
+\cf4 select \cf2 app_version \cf4 , count\cf2 (\cf4 distinct \cf2 session_long) \cf4 from \cf2 ods.panameraolx_asia_hydra_ninja_android_last_month\
+\cf4 where \cf2 date_event_nk=\cf6 '2019-08-16' \cf4 and \cf2 country_sk=\cf6 'olx|asia|in'\
+\cf4 group by \cf7 1\
+\cf4 order by \cf7 2 \cf4 desc\
+limit \cf7 100\
+\
+\cf4 SELECT TIMESTAMP \cf6 'epoch' \cf2 + \cf7 1195374767 \cf2 * \cf4 INTERVAL \cf6 '1 second'\
+\
+\cf4 select \cf2 date_nk \cf4 , count\cf2 (\cf4 distinct \cf2 session_long) \cf4 as \cf2 users \cf4 from \cf2 ods.fact_user_hydra_browsing_activity\
+ \cf4 where \cf2 is_panamera=\cf4 true and \cf2 country_sk=\cf6 'olx|asia|in'\
+ \cf4 and \cf2 date_nk >= \cf6 '2019-06-01'\
+\cf4 group by \cf7 1\
+\cf4 order by \cf7 1\
+\
+\cf4 select\
+\
+\
+ from \cf2 spectrum.hydra_p_olx_android \cf4 where    year\cf2 =\cf7 2019\
+   \cf4 and month\cf2 =\cf7 8\
+   \cf4 and day \cf2 =\cf7 2\
+   \cf4 and \cf2 params_cc = \cf6 'in'\
+   \cf4 and hour\cf2 =\cf7 21\
+   \cf4 and \cf2 params_en = \cf6 'permissions_tap_allow'\
+\cf4 limit \cf7 10\
+\
+\
+\cf4 select \cf2 * \cf4 from \cf2 ods.dim_geographies \cf4 where \cf2 country_sk=\cf6 'olx|asia|in' \cf4 and \cf2 geography_nk=\cf6 '2001147' \cf4 limit \cf7 100\
+\
+\
+\cf4 drop table if exists \cf2 scheduler\cf4 ;\
+select\
+  \cf2 session_long\cf4 ,\
+  \cf2 date_event_nk\
+   \cf4 into temp table \cf2 scheduler\
+  \cf4 from \cf2 ods.panameraolx_asia_hydra_ninja_android_last_month\
+  \cf4 where \cf2 trackevent=\cf6 'messages_scheduler_ended'\
+    \cf4 and \cf2 date_event_nk=\cf6 '2019-08-10'\
+    \cf4 and \cf2 country_sk=\cf6 'olx|asia|in'\
+\cf4 group by \cf7 1\cf4 ,\cf7 2\
+\
+\cf4 drop table if exists \cf2 contantdo_eventos_de_los_scheduler\cf4 ;\
+select\
+  \cf2 a.session_long\cf4 ,\
+  count\cf2 (*) \cf4 as \cf2 events\
+   \cf4 into temp table \cf2 contantdo_eventos_de_los_scheduler\
+    \cf4 from \cf2 ods.panameraolx_asia_hydra_ninja_android_last_month a\
+     \cf4 join \cf2 scheduler b \cf4 on \cf2 a.session_long=b.session_long \cf4 and \cf2 a.date_event_nk=b.date_event_nk\
+ \cf4 where\
+    \cf2 a.date_event_nk=\cf6 '2019-08-10'\
+\cf4 and \cf2 country_sk=\cf6 'olx|asia|in'\
+\cf4 group by \cf7 1\
+\cf4 order by \cf7 2\
+\
+\
+\cf4 select \cf2 * \cf4 from \cf2 contantdo_eventos_de_los_scheduler \cf4 where \cf2 events=\cf7 8\
+\
+\cf4 select\
+  \cf2 events\cf4 ,\
+  count\cf2 (\cf4 distinct \cf2 session_long) \cf4 as \cf2 users\
+    \cf4 from \cf2 contantdo_eventos_de_los_scheduler\
+\cf4 group by \cf7 1\
+\cf4 order by \cf7 1\
+\
+\
+\cf4 select\
+ \cf2 *\
+  \cf4 from \cf2 ods.panameraolx_asia_hydra_ninja_android_last_month\
+   \cf4 where \cf2 session_long=\cf6 '16b923e7648x59ac548c' \cf4 and \cf2 date_event_nk=\cf6 '2019-08-10'\
+\
+\
+\cf4 select\
+ \cf2 date_nk\cf4 ,\
+ count\cf2 (\cf4 distinct \cf2 session_long) \cf4 as \cf2 users\
+  \cf4 from \cf2 ods.fact_user_hydra_browsing_activity\
+\cf4 where \cf2 country_sk=\cf6 'olx|asia|in' \cf4 and \cf2 date_nk>\cf6 '2019-01-01'\
+\cf4 group by \cf7 1\
+\cf4 order by \cf7 1\
+\
+\cf4 SELECT \cf2 date_sent_nk\cf4 ,count\cf2 (\cf4 distinct \cf2 user_sk)\
+\cf4 FROM \cf2 ods.fact_replies\
+\cf4 where \cf2 date_sent_nk > \cf6 '2019-01-01'\
+\cf4 and \cf2 country_sk=\cf6 'olx|asia|in'\
+\cf4 and \cf2 reply_num=\cf7 1\
+ \cf4 and \cf2 reply_net_sk \cf4 like \cf6 '%net%'\
+\cf4 group by \cf7 1\
+\cf4 order by \cf7 1\
+\
+\cf4 select\
+ \cf2 date_posted_nk\cf4 ,\
+ count\cf2 (\cf4 distinct \cf2 listing_nk)\
+ \cf4 from \cf2 ods.fact_listings\
+\cf4 where \cf2 date_posted_nk > \cf6 '2019-01-01'\
+\cf4 and \cf2 country_sk=\cf6 'olx|asia|in'\
+\cf4 and \cf2 listing_net_sk \cf4 like \cf6 'net%'\
+\cf4 group by \cf7 1\
+\cf4 order by \cf7 1\
+\
+\
+\cf4 WITH \cf2 verified \cf4 AS \cf2 (\
+\cf4 SELECT session\
+from \cf2 ods.panameraolx_asia_hydra_ninja_android_201903\
+\cf4 WHERE \cf2 trackevent \cf4 in \cf2 (\cf6 'login_show' \cf4 , \cf6 'onboarding_show'\cf2 ) \cf4 and \cf2 country_sk=\cf6 'olx|asia|in' \cf4 and \cf2 server_path=\cf6 '/h/p-olx-android' \cf4 and \cf2 date_event_nk < \cf6 '2019-03-15'\
+\cf2 )\
+\cf4 SELECT\
+\cf2 date_event_nk\cf4 ,\
+COUNT\cf2 (\cf4 DISTINCT CASE WHEN \cf2 trackevent \cf4 in \cf2 (\cf6 'login_show' \cf4 , \cf6 'onboarding_show'\cf2 ) \cf4 and \cf2 server_path=\cf6 '/h/p-olx-android' \cf4 THEN \cf2 session_long \cf4 ELSE NULL END\cf2 ) \cf4 AS \cf2 onboarding_y_login_show\cf4 ,\
+COUNT\cf2 (\cf4 DISTINCT CASE WHEN \cf2 trackevent = \cf6 'login_sign_in_complete' \cf4 and \cf2 server_path=\cf6 '/h/p-olx-android' \cf4 THEN \cf2 session_long \cf4 ELSE NULL END\cf2 ) \cf4 AS \cf2 login_sign_in_complete\
+\cf4 FROM \cf2 ods.panameraolx_asia_hydra_ninja_android_201903 \cf4 h\
+INNER JOIN \cf2 verified t \cf4 ON h\cf2 .session=t.session\
+\cf4 where \cf2 country_sk=\cf6 'olx|asia|in' \cf4 and \cf2 date_event_nk < \cf6 '2019-03-15'\
+\cf4 group by \cf7 1\
+\
+\
+\cf4 drop table if exists \cf2 users_logers\cf4 ;\
+select\
+  extract\cf2 (\cf4 month from \cf2 date_event_nk) \cf4 as month,\
+  \cf2 channel_sk\cf4 ,\
+  \cf2 split_part(country_sk \cf4 , \cf6 '|' \cf4 , \cf7 1\cf2 )||split_part(country_sk \cf4 , \cf6 '|' \cf4 , \cf7 3\cf2 ) \cf4 as \cf2 country\cf4 ,\
+  \cf2 login_method\cf4 ,\
+  \cf2 user_nk\
+   \cf4 into temp table \cf2 users_logers\
+    \cf4 from \cf2 ods.fact_login_complete\
+ \cf4 where \cf2 country_sk \cf4 in \cf2 (\cf6 'olx|asia|in' \cf4 , \cf6 'olx|asia|id'\cf2 )\
+ \cf4 and \cf2 date_event_nk >= \cf6 '2019-08-01' \cf4 and \cf2 date_event_nk<=\cf6 '2019-08-31'\
+\cf4 group by \cf7 1\cf4 ,\cf7 2\cf4 ,\cf7 3\cf4 ,\cf7 4\cf4 ,\cf7 5\
+\cf4 order by \cf7 5\
+\
+\cf4 drop table if exists \cf2 users_status\cf4 ;\
+select\
+ \cf2 id\cf4 ,\
+ case when \cf2 facebook_id \cf4 is not null then \cf7 1 \cf4 else \cf7 0 \cf4 end as \cf2 has_facebook\cf4 ,\
+ case when \cf2 google_id \cf4 is not null then \cf7 1 \cf4 else \cf7 0 \cf4 end as \cf2 has_google\cf4 ,\
+ case when \cf2 default_phone \cf4 is not null then \cf7 1 \cf4 else \cf7 0 \cf4 end as \cf2 has_phone\cf4 ,\
+ case\
+    WHEN \cf2 email \cf4 LIKE \cf6 '%olx.co%' \cf4 THEN \cf7 0 \cf9 -- Autogenerado\
+    \cf4 WHEN \cf2 email \cf4 LIKE \cf6 '%@olx%' \cf4 THEN \cf7 0 \cf9 -- Autogenerado\
+    \cf4 WHEN \cf2 email \cf4 LIKE \cf6 '%DELETED%' \cf4 THEN \cf7 0 \cf9 -- Autogenerados\
+    \cf4 WHEN \cf2 email \cf4 LIKE \cf6 '%UNLINK%' \cf4 THEN \cf7 0 \cf9 -- Autogenerados\
+    \cf4 WHEN \cf2 email REGEXP \cf6 '[0-9]\{7\}' \cf4 THEN \cf7 0 \cf9 -- Error de carga\
+    \cf4 ELSE \cf7 1 \cf4 END\cf2 )  \cf4 as \cf2 valido_email\
+  \cf4 into temp table \cf2 users_status\
+ \cf4 from \cf2 livesync.panamera_users a\
+      \cf4 join \cf2 users_logers b \cf4 on \cf2 a.id=b.user_nk \cf4 and \cf2 a.livesync_dbname=b.country\
+\
+\
+\cf4 select \cf2 * \cf4 from \cf2 ods.fact_resultset_performance \cf4 where \cf2 country_sk=\cf6 'olx|asia|in' \cf4 limit \cf7 100\
+\
+\
+\cf4 select\
+ \cf2 *\
+\cf4 from \cf2 ods.panameraolx_mea_hydra_ninja_android_last_month\
+ \cf4 where\
+\
+\
+drop table if exists\
+select\
+    \cf2 session_long\cf4 ,\
+    session\
+ from \cf2 ods.panameraolx_mea_hydra_ninja_android_last_month\
+\cf4 where\
+    \cf2 country_sk=\cf6 'olx|asia|in'\
+ \cf4 and \cf2 trackevent=\cf6 'posting_tap_next_step' \cf4 and \cf2 verified_lister \cf4 is not null and \cf2 posting_step=\cf6 'location'\
+ \cf4 and \cf2 date_event_nk=\cf6 '2019-09-08'\
+\cf4 group by \cf7 1\cf4 ,\cf7 2\
+\
+\cf4 limit \cf7 100\
+\
+\cf2 loginvolume_total = pd.read_sql_query(query.replace(\cf6 '%'\cf4 , \cf6 '%%'\cf2 )\cf4 , \cf2 engine)\
+\cf4 WITH \cf2 verified \cf4 AS \cf2 (\
+    \cf4 SELECT session\
+from \cf2 ods.panameraolx_asia_hydra_ninja_android_last_month\
+\cf4 WHERE \cf2 trackevent \cf4 in \cf2 (\cf6 'posting_tap_next_step'\cf2 ) \cf4 and \cf2 verified_lister \cf4 is not null and \cf2 posting_step=\cf6 'location' \cf4 and \cf2 date_event_nk=\cf6 '2019-09-08'\
+\cf2 )\
+\cf4 SELECT\
+  \cf2 date_event_nk\cf4 ,\
+  COUNT\cf2 (\cf4 DISTINCT CASE WHEN \cf2 trackevent \cf4 in \cf2 (\cf6 'posting_tap_next_step'\cf2 ) \cf4 and \cf2 verified_lister \cf4 is not null and \cf2 posting_step=\cf6 'location' \cf4 THEN \cf2 session_long \cf4 ELSE NULL END\cf2 ) \cf4 AS \cf2 show_of_unverified_screen\cf4 ,\
+  COUNT\cf2 (\cf4 DISTINCT CASE WHEN \cf2 trackevent = \cf6 'posting_successful_post' \cf4 THEN \cf2 session_long \cf4 ELSE NULL END\cf2 ) \cf4 AS \cf2 posting_successful_post\
+\cf4 FROM \cf2 ods.panameraolx_asia_hydra_ninja_android_last_month \cf4 h\
+INNER JOIN \cf2 verified t \cf4 ON h\cf2 .session=t.session\
+  \cf4 where \cf2 country_sk=\cf6 'olx|asia|id' \cf4 and \cf2 date_event_nk=\cf6 '2019-09-08'\
+ \cf4 group by \cf7 1\
+\
+\
+\cf4 WITH \cf2 verified \cf4 AS \cf2 (\
+    \cf4 SELECT session\
+from \cf2 ods.panameraolx_asia_hydra_ninja_android_last_month\
+\cf4 WHERE \cf2 trackevent \cf4 in \cf2 (\cf6 'posting_tap_post'\cf2 )  \cf4 and \cf2 date_event_nk=\cf6 '2019-09-08' \cf4 and \cf2 country_sk=\cf6 'olx|asia|in' \cf4 and \cf2 verified_lister \cf4 is not true\
+\cf2 )\
+\cf4 SELECT\
+  \cf2 date_event_nk\cf4 ,\
+  COUNT\cf2 (\cf4 DISTINCT CASE WHEN \cf2 trackevent \cf4 in \cf2 (\cf6 'posting_tap_post'\cf2 ) \cf4 and \cf2 verified_lister \cf4 is not true THEN \cf2 session_long \cf4 ELSE NULL END\cf2 ) \cf4 AS \cf2 show_of_unverified_screen\cf4 ,\
+  COUNT\cf2 (\cf4 DISTINCT CASE WHEN \cf2 trackevent = \cf6 'posting_successful_post' \cf4 THEN \cf2 session_long \cf4 ELSE NULL END\cf2 ) \cf4 AS \cf2 posting_successful_post\
+\cf4 FROM \cf2 ods.panameraolx_asia_hydra_ninja_android_last_month \cf4 h\
+INNER JOIN \cf2 verified t \cf4 ON h\cf2 .session=t.session\
+  \cf4 where \cf2 date_event_nk=\cf6 '2019-09-08' \cf4 and \cf2 country_sk=\cf6 'olx|asia|in'\
+ \cf4 group by \cf7 1\
+\
+\
+\cf4 select\
+   count\cf2 (\cf4 distinct \cf2 session_long) \cf4 as \cf2 users\
+ \cf4 from \cf2 ods.panameraolx_asia_hydra_ninja_android_last_month\
+  \cf4 where \cf2 trackevent=\cf6 'posting_tap_post' \cf4 and \cf2 date_event_nk=\cf6 '2019-09-08' \cf4 and \cf2 country_sk=\cf6 'olx|asia|in'\
+\
+\
+\cf4 WITH \cf2 verified \cf4 AS \cf2 (\
+    \cf4 SELECT session\
+from \cf2 ods.panameraolx_asia_hydra_ninja_android_last_month\
+\cf4 WHERE \cf2 trackevent \cf4 in \cf2 (\cf6 'verify_show_pin'\cf2 ) \cf4 and \cf2 date_event_nk=\cf6 '2019-09-08'\
+\cf2 )\
+\cf4 SELECT\
+  \cf2 date_event_nk\cf4 ,\
+  COUNT\cf2 (\cf4 DISTINCT CASE WHEN \cf2 trackevent \cf4 in \cf2 (\cf6 'verify_show_pin'\cf2 ) \cf4 THEN \cf2 session_long \cf4 ELSE NULL END\cf2 ) \cf4 AS \cf2 show_of_unverified_screen\cf4 ,\
+  COUNT\cf2 (\cf4 DISTINCT CASE WHEN \cf2 trackevent = \cf6 'verify_complete' \cf4 THEN \cf2 session_long \cf4 ELSE NULL END\cf2 ) \cf4 AS \cf2 posting_successful_post\
+\cf4 FROM \cf2 ods.panameraolx_asia_hydra_ninja_android_last_month \cf4 h\
+INNER JOIN \cf2 verified t \cf4 ON h\cf2 .session=t.session\
+  \cf4 where \cf2 country_sk=\cf6 'olx|asia|id' \cf4 and \cf2 date_event_nk=\cf6 '2019-09-08'\
+ \cf4 group by \cf7 1\
+\
+\cf4 WITH \cf2 verified \cf4 AS \cf2 (\
+    \cf4 SELECT session\
+from \cf2 ods.panameraolx_asia_hydra_ninja_android_last_month\
+\cf4 WHERE \cf2 trackevent \cf4 in \cf2 (\cf6 'login_send_data'\cf2 ) \cf4 and \cf2 select_from=\cf6 'pin'\cf4 and \cf2 login_method=\cf6 'phone' \cf4 and \cf2 date_event_nk=\cf6 '2019-09-08' \cf4 and \cf2 country_sk=\cf6 'olx|asia|in'\
+\cf2 )\
+\cf4 SELECT\
+  \cf2 date_event_nk\cf4 ,\
+  COUNT\cf2 (\cf4 DISTINCT CASE WHEN \cf2 trackevent \cf4 in \cf2 (\cf6 'login_send_data'\cf2 ) \cf4 and \cf2 select_from=\cf6 'pin' \cf4 and \cf2 login_method=\cf6 'phone' \cf4 THEN \cf2 session_long \cf4 ELSE NULL END\cf2 ) \cf4 AS \cf2 show_of_unverified_screen\cf4 ,\
+  COUNT\cf2 (\cf4 DISTINCT CASE WHEN \cf2 trackevent = \cf6 'login_sign_in_complete' \cf4 THEN \cf2 session_long \cf4 ELSE NULL END\cf2 ) \cf4 AS \cf2 posting_successful_post\
+\cf4 FROM \cf2 ods.panameraolx_asia_hydra_ninja_android_last_month \cf4 h\
+INNER JOIN \cf2 verified t \cf4 ON h\cf2 .session=t.session\
+  \cf4 where \cf2 country_sk=\cf6 'olx|asia|in' \cf4 and \cf2 date_event_nk=\cf6 '2019-09-08'\
+ \cf4 group by \cf7 1\
+\
+\
+\
+\
+\cf4 select\
+ count\cf2 (\cf4 distinct \cf2 session_long) \cf4 as user\
+   from \cf2 ods.panameraolx_asia_hydra_ninja_android_last_month\
+\cf4 where \cf2 trackevent \cf4 not in \cf2 (\cf6 'app_open'\cf4 , \cf6 'on_create'\cf4 , \cf6 'apps'\cf4 , \cf6 'push_dis'\cf4 ,\cf6 'pushDis'\cf4 , \cf6 'push_rcv'\cf4 ,\
+\cf6 'pushRcv'\cf4 , \cf6 'UAReg'\cf4 , \cf6 'ua_reg'\cf4 , \cf6 'uareg'\cf4 ,\cf6 'push_dismissed'\cf4 , \cf6 'push_show'\cf4 , \cf6 'fetching_matrix'\cf4 , \cf6 'not_found'\cf4 ,\
+\cf6 'permissions_impression'\cf4 ,\cf6 'userBadgeCount'\cf4 ,\cf6 'test_assignment'\cf4 ,\cf6 'test_impression'\cf4 ,\cf6 'test_discovered'\cf4 ,\
+\cf6 'FCMReg'\cf4 ,\cf6 'APNSReg'\cf4 ,\cf6 'appOpn'\cf4 ,\cf6 'appOpen'\cf4 ,\cf6 'google_play_services'\cf4 ,\cf6 'fetchTestDefinitionsError'\cf4 ,\cf6 'messages_scheduler_ended'\cf4 ,\
+\cf6 'messages_scheduler_started'\cf4 ,\cf6 'chat_auth_fail'\cf2 ) \cf4 and \cf2 country_sk=\cf6 'olx|asia|in'\
+\
+\
+\
+\cf4 select\
+\cf2 *\
+\cf4 from \cf2 ods.panameraolx_mea_hydra_ninja_android_last_month\
+\cf4 where \cf2 country_sk = \cf6 'olx|mea|pk' \cf4 order by \cf2 session_long\cf4 ,\cf2 time_event_utc\
+\cf4 limit \cf7 100\
+\
+\
+\
+\cf4 select\
+       \cf2 date_nk \cf4 ,\
+       count\cf2 (\cf4 distinct \cf2 session_long) \cf4 as \cf2 DAU\
+\cf4 from \cf2 ods.fact_user_hydra_browsing_activity\
+ \cf4 where \cf2 country_sk=\cf6 'olx|asia|in' \cf4 and \cf2 date_nk > \cf6 '2019-08-16'\
+\cf4 group by \cf7 1\
+\cf4 limit \cf7 100\
+\
+\
+\cf9 -- DAU\
+\
+\cf4 select\
+ \cf2 date_nk\cf4 ,\
+ count\cf2 (\cf4 distinct \cf2 session_long) \cf4 as \cf2 users\
+\cf4 from \cf2 ods.fact_user_hydra_browsing_activity\
+\cf4 where \cf2 country_sk=\cf6 'olx|asia|in' \cf4 and \cf2 channel_sk \cf4 like \cf6 '%android%'\
+    \cf4 and \cf2 date_nk > \cf6 '2019-07-01'\
+\cf4 group by \cf7 1\
+\
+\
+\cf4 select\
+ \cf2 date_event_nk\cf4 ,\
+ count\cf2 (\cf4 distinct case when \cf2 trackevent \cf4 in \cf2 (\cf6 'item_tap_call' \cf4 , \cf6 'item_chat_tap_send_1st_reply' \cf4 , \cf6 'item_tap_sms' \cf4 , \cf6 'item_chat_tap_sms'\cf2 ) \cf4 then \cf2 session_long \cf4 else null end\cf2 ) \cf4 as \cf2 repliers\cf4 ,\
+ count\cf2 (\cf4 distinct case when \cf2 trackevent = \cf6 'posting_successful_post' \cf4 then \cf2 session_long \cf4 else null end\cf2 ) \cf4 as \cf2 listers\cf4 ,\
+ count\cf2 (\cf4 distinct case when \cf2 trackevent \cf4 not in \cf2 (\cf6 'app_open'\cf4 , \cf6 'on_create'\cf4 , \cf6 'apps'\cf4 , \cf6 'push_dis'\cf4 ,\cf6 'pushDis'\cf4 , \cf6 'push_rcv'\cf4 ,\
+\cf6 'pushRcv'\cf4 , \cf6 'UAReg'\cf4 , \cf6 'ua_reg'\cf4 , \cf6 'uareg'\cf4 ,\cf6 'push_dismissed'\cf4 , \cf6 'push_show'\cf4 , \cf6 'fetching_matrix'\cf4 , \cf6 'not_found'\cf4 ,\
+\cf6 'permissions_impression'\cf4 ,\cf6 'userBadgeCount'\cf4 ,\cf6 'test_assignment'\cf4 ,\cf6 'test_impression'\cf4 ,\cf6 'test_discovered'\cf4 ,\
+\cf6 'FCMReg'\cf4 ,\cf6 'APNSReg'\cf4 ,\cf6 'appOpn'\cf4 ,\cf6 'appOpen'\cf4 ,\cf6 'google_play_services'\cf4 ,\cf6 'fetchTestDefinitionsError'\cf4 ,\cf6 'messages_scheduler_ended'\cf4 ,\
+\cf6 'messages_scheduler_started'\cf4 ,\cf6 'chat_auth_fail'\cf2 ) \cf4 then \cf2 session_long \cf4 else null end\cf2 ) \cf4 as \cf2 dau_proxy\
+  \cf4 from \cf2 ods.panameraolx_asia_hydra_ninja_android_last_3_months\
+ \cf4 where \cf2 country_sk \cf4 like \cf6 '%in%'\
+\cf4 group by \cf7 1\
+\cf4 order by \cf7 1\
+\
+\
+\cf9 -- Behaviour\
+\
+\cf4 select\
+    \cf2 date_event_nk\cf4 ,\
+    \cf2 country_sk\cf4 ,\
+    count\cf2 (\cf4 distinct case when \cf2 trackevent \cf4 in \cf2 (\cf6 'item_tap_call' \cf4 , \cf6 'item_chat_tap_send_1st_reply' \cf4 , \cf6 'item_tap_sms' \cf4 , \cf6 'item_chat_tap_sms'\cf2 ) \cf4 then \cf2 session_long \cf4 else null end\cf2 ) \cf4 as \cf2 repliers\cf4 ,\
+    count\cf2 (\cf4 distinct case when \cf2 trackevent \cf4 in \cf2 (\cf6 'item_chat_tap_send_1st_reply'\cf2 ) \cf4 then \cf2 session_long \cf4 else null end\cf2 ) \cf4 as \cf2 repliers_chat\cf4 ,\
+    count\cf2 (\cf4 distinct case when \cf2 trackevent \cf4 in \cf2 (\cf6 'item_tap_call'\cf2 ) \cf4 then \cf2 session_long \cf4 else null end\cf2 ) \cf4 as \cf2 repliers_call\cf4 ,\
+    count\cf2 (\cf4 distinct case when \cf2 trackevent \cf4 in \cf2 (\cf6 'item_tap_sms' \cf4 , \cf6 'item_chat_tap_sms'\cf2 ) \cf4 then \cf2 session_long \cf4 else null end\cf2 ) \cf4 as \cf2 repliers_sms\cf4 ,\
+    count\cf2 (\cf4 distinct case when \cf2 trackevent \cf4 in \cf2 (\cf6 'item_tap_call' \cf4 , \cf6 'item_chat_tap_send_1st_reply' \cf4 , \cf6 'item_tap_sms' \cf4 , \cf6 'item_chat_tap_sms'\cf2 ) \cf4 then \cf2 user_sk \cf4 else null end\cf2 ) \cf4 as \cf2 qty_user_id\cf4 ,\
+    count\cf2 (\cf4 distinct case when \cf2 trackevent \cf4 in \cf2 (\cf6 'item_tap_call' \cf4 , \cf6 'item_chat_tap_send_1st_reply' \cf4 , \cf6 'item_tap_sms' \cf4 , \cf6 'item_chat_tap_sms'\cf2 ) \cf4 then \cf2 session_long \cf4 else null end\cf2 ) \cf4 as \cf2 session_user_id\
+ \cf4 from \cf2 ods.panameraolx_asia_hydra_ninja_android_last_month\
+\cf4 group by \cf7 1\cf4 ,\cf7 2\
+\cf4 order by \cf7 2\cf4 ,\cf7 1\
+\
+\
+\cf2 WITHreplies_rk \cf4 AS \cf2 (\cf4 SELECT \cf2 a.session_long\cf4 , \cf2 listing_sk\cf4 , \cf2 date_event_nk\cf4 ,\cf2 time_event_local\
+                     \cf4 , \cf2 row_number() \cf4 OVER \cf2 (\cf4 PARTITION BY \cf2 a.session_long \cf4 ORDER BY \cf2 time_event_local \cf4 ASC \cf2 ) rk\
+    \cf4 FROM \cf2 ods.panameraolx_asia_hydra_ninja_android_last_12_months a\
+     \cf4 WHERE \cf2 trackevent \cf4 in \cf2 (\cf6 'item_chat_tap_chat'\cf4 , \cf6 'item_chat_tap_send_offer'\cf2 )\
+       \cf4 and \cf2 country_sk=\cf6 'olx|asia|in'\
+ \cf2 )\cf4 ,\
+     \cf2 replies_deduped \cf4 AS \cf2 (\
+     \cf4 SELECT \cf2 *\
+     \cf4 FROM \cf2 replies_rk\
+     \cf4 WHERE \cf2 rk = \cf7 1\
+ \cf2 )\
+   \cf4 select \cf2 * \cf4 from \cf2 replies_deduped \cf4 limit \cf7 100\
+\
+\
+\
+\
+\
+\cf4 select \cf2 date_event_nk \cf4 , count\cf2 (\cf4 distinct \cf2 session_long) \cf4 as \cf2 users\
+  \cf4 from \cf2 panameraolx_asia_hydra_ninja_android_last_12_months\
+ \cf4 where \cf2 trackevent \cf4 in \cf2 (\cf6 'item_chat_tap_chat'\cf4 , \cf6 'item_chat_tap_send_offer'\cf2 )\
+\
+\
+\
+\cf4 select\
+ \cf2 panamera_user_sk\cf4 ,\
+ \cf2 listing_sk\cf4 ,\
+ count\cf2 (\cf4 distinct \cf2 reply_channel_sk) \cf4 as \cf2 distinct_reply_channel_sk\
+  \cf4 from \cf2 ods.fact_replies\
+ \cf4 where \cf2 country_sk=\cf6 'olx|asia|in' \cf4 and \cf2 date_sent_nk>\cf6 '2019-07-01'\
+\cf4 group by \cf7 1\cf4 ,\cf7 2\
+\cf4 having count\cf2 (\cf4 distinct \cf2 reply_channel_sk)>\cf7 1\
+\cf4 limit \cf7 100\
+\
+\cf4 select\
+ \cf2 *\
+\cf4 from \cf2 ods.fact_replies\
+\cf4 where \cf2 panamera_user_sk=\cf6 'olx|asia|in|platform|id|10238885'\
+ \cf4 and \cf2 listing_sk=\cf6 'olx|asia|in|1532302732'\
+\
+\
+\cf4 select \cf2 date_event_nk\cf4 ,count\cf2 (\cf4 distinct \cf2 user_sk)\cf4 , \cf2 sum(reply_sms)\cf4 , \cf2 sum(reply_call)\cf4 , \cf2 sum(reply_chat)\cf4 ,\cf2 sum(reply_call) + sum(reply_chat) + sum(reply_sms) \cf4 as \cf2 replies\
+\cf4 from\
+\cf2 (\cf4 select \cf2 user_sk\cf4 , \cf2 listing_sk\cf4 , max\cf2 (\cf4 case when \cf2 trackevent \cf4 in \cf2 ( \cf6 'item_chat_tap_sms'\cf4 , \cf6 'item_tap_sms'\cf2 ) \cf4 then \cf7 1 \cf4 else \cf7 0 \cf4 end\cf2 ) \cf4 as \cf2 reply_sms\cf4 ,\
+        max\cf2 (\cf4 case when \cf2 trackevent \cf4 in \cf2 ( \cf6 'item_tap_call'\cf2 ) \cf4 then \cf7 1 \cf4 else \cf7 0 \cf4 end\cf2 ) \cf4 as \cf2 reply_call\cf4 ,\
+        max\cf2 (\cf4 case when \cf2 trackevent \cf4 in \cf2 ( \cf6 'item_chat_tap_send_1st_reply'\cf2 ) \cf4 then \cf7 1 \cf4 else \cf7 0 \cf4 end\cf2 ) \cf4 as \cf2 reply_chat\cf4 ,\
+        min\cf2 (date_event_nk) \cf4 as \cf2 date_event_nk\
+\cf4 FROM \cf2 (\cf4 select \cf2 user_sk\cf4 , \cf2 listing_sk\cf4 , \cf2 trackevent\cf4 , \cf2 country_sk\cf4 , \cf2 date_event_nk \cf4 from  \cf2 ods.panameraolx_asia_hydra_ninja_android_last_month\
+    \cf4 union all select \cf2 user_sk\cf4 , \cf2 listing_sk\cf4 , \cf2 trackevent\cf4 , \cf2 country_sk\cf4 , \cf2 date_event_nk \cf4 from \cf2 ods.panameraolx_asia_hydra_ninja_ios_last_month\
+    \cf4 union all select \cf2 user_sk\cf4 , \cf2 listing_sk\cf4 , \cf2 trackevent\cf4 , \cf2 country_sk\cf4 , \cf2 date_event_nk \cf4 from \cf2 ods.panameraolx_asia_hydra_ninja_web_last_month)\
+\uc0\u8203 \
+\cf4 where \cf2 country_sk = \cf6 'olx|asia|in'\
+\cf4 and \cf2 trackevent \cf4 in \cf2 (\cf6 'item_tap_call'\cf4 , \cf6 'item_chat_tap_sms'\cf4 , \cf6 'item_tap_sms'\cf4 , \cf6 'item_chat_tap_send_1st_reply'\cf2 )\
+\cf4 group by \cf7 1\cf4 ,\cf7 2\cf2 )\
+\cf4 group by \cf7 1\
+\cf4 ;\
+\
+\cf9 -- Matrix of replies\
+\
+\cf4 select\
+  \cf2 panamera_user_sk\cf4 ,\
+count\cf2 (\cf4 distinct case when \cf2 category_l2_name_en = \cf6 'Unknown' \cf4 then \cf2 reply_nk \cf4 else null end\cf2 ) \cf4 as \cf2 replies_Unknown\cf4 ,\
+count\cf2 (\cf4 distinct case when \cf2 category_l2_name_en = \cf6 'FishesAquarium%' \cf4 then \cf2 reply_nk \cf4 else null end\cf2 ) \cf4 as \cf2 replies_FishesAquarium\cf4 ,\
+count\cf2 (\cf4 distinct case when \cf2 category_l2_name_en = \cf6 'Dogs' \cf4 then \cf2 reply_nk \cf4 else null end\cf2 ) \cf4 as \cf2 replies_Dogs\cf4 ,\
+count\cf2 (\cf4 distinct case when \cf2 category_l2_name_en = \cf6 'Other Pets' \cf4 then \cf2 reply_nk \cf4 else null end\cf2 ) \cf4 as \cf2 replies_Other_Pets\cf4 ,\
+count\cf2 (\cf4 distinct case when \cf2 category_l2_name_en \cf4 like \cf6 'Pet Food%' \cf4 then \cf2 reply_nk \cf4 else null end\cf2 ) \cf4 as \cf2 replies_Pet_Food_Accessories\cf4 ,\
+count\cf2 (\cf4 distinct case when \cf2 category_l2_name_en = \cf6 'Mobile Phones' \cf4 then \cf2 reply_nk \cf4 else null end\cf2 ) \cf4 as \cf2 replies_Mobile_Phones\cf4 ,\
+count\cf2 (\cf4 distinct case when \cf2 category_l2_name_en = \cf6 'Tablets' \cf4 then \cf2 reply_nk \cf4 else null end\cf2 ) \cf4 as \cf2 replies_Tablets\cf4 ,\
+count\cf2 (\cf4 distinct case when \cf2 category_l2_name_en = \cf6 'Accessories' \cf4 then \cf2 reply_nk \cf4 else null end\cf2 ) \cf4 as \cf2 replies_Accessories\cf4 ,\
+count\cf2 (\cf4 distinct case when \cf2 category_l2_name_en = \cf6 'Scooters' \cf4 then \cf2 reply_nk \cf4 else null end\cf2 ) \cf4 as \cf2 replies_Scooters\cf4 ,\
+count\cf2 (\cf4 distinct case when \cf2 category_l2_name_en = \cf6 'Bicycles' \cf4 then \cf2 reply_nk \cf4 else null end\cf2 ) \cf4 as \cf2 replies_Bicycles\cf4 ,\
+count\cf2 (\cf4 distinct case when \cf2 category_l2_name_en = \cf6 'Spare Parts' \cf4 then \cf2 reply_nk \cf4 else null end\cf2 ) \cf4 as \cf2 replies_Spare_Parts\cf4 ,\
+count\cf2 (\cf4 distinct case when \cf2 category_l2_name_en = \cf6 'Motorcycles' \cf4 then \cf2 reply_nk \cf4 else null end\cf2 ) \cf4 as \cf2 replies_Motorcycles\cf4 ,\
+count\cf2 (\cf4 distinct case when \cf2 category_l2_name_en = \cf6 'For Sale' \cf4 then \cf2 reply_nk \cf4 else null end\cf2 ) \cf4 as \cf2 replies_For_Sale\cf4 ,\
+count\cf2 (\cf4 distinct case when \cf2 category_l2_name_en = \cf6 'For Rent' \cf4 then \cf2 reply_nk \cf4 else null end\cf2 ) \cf4 as \cf2 replies_For_Rent\cf4 ,\
+count\cf2 (\cf4 distinct case when \cf2 category_l2_name_en = \cf6 'New Projects' \cf4 then \cf2 reply_nk \cf4 else null end\cf2 ) \cf4 as \cf2 replies_New_Projects\cf4 ,\
+count\cf2 (\cf4 distinct case when \cf2 category_l2_name_en \cf4 like \cf6 'Land%' \cf4 then \cf2 reply_nk \cf4 else null end\cf2 ) \cf4 as \cf2 replies_Land_Plots\cf4 ,\
+count\cf2 (\cf4 distinct case when \cf2 category_l2_name_en = \cf6 'Shops - Offices - Commercial Space' \cf4 then \cf2 reply_nk \cf4 else null end\cf2 ) \cf4 as \cf2 replies_Shops_Offices_Commercial_Space\cf4 ,\
+count\cf2 (\cf4 distinct case when \cf2 category_l2_name_en = \cf6 'Marketing' \cf4 then \cf2 reply_nk \cf4 else null end\cf2 ) \cf4 as \cf2 replies_Marketing\cf4 ,\
+count\cf2 (\cf4 distinct case when \cf2 category_l2_name_en \cf4 like \cf6 'Advertising%' \cf4 then \cf2 reply_nk \cf4 else null end\cf2 ) \cf4 as \cf2 replies_Advertising_PR\cf4 ,\
+count\cf2 (\cf4 distinct case when \cf2 category_l2_name_en = \cf6 'Human Resources' \cf4 then \cf2 reply_nk \cf4 else null end\cf2 ) \cf4 as \cf2 replies_Human_Resources\cf4 ,\
+count\cf2 (\cf4 distinct case when \cf2 category_l2_name_en \cf4 like \cf6 'Hotel5' \cf4 then \cf2 reply_nk \cf4 else null end\cf2 ) \cf4 as \cf2 replies_Hotel_Travel_Executive\cf4 ,\
+count\cf2 (\cf4 distinct case when \cf2 category_l2_name_en = \cf6 'Accountant' \cf4 then \cf2 reply_nk \cf4 else null end\cf2 ) \cf4 as \cf2 replies_Accountant\cf4 ,\
+count\cf2 (\cf4 distinct case when \cf2 category_l2_name_en \cf4 like \cf6 'BPO%' \cf4 then \cf2 reply_nk \cf4 else null end\cf2 ) \cf4 as \cf2 replies_BPO_Telecaller\cf4 ,\
+count\cf2 (\cf4 distinct case when \cf2 category_l2_name_en \cf4 like \cf6 'Data entry %' \cf4 then \cf2 reply_nk \cf4 else null end\cf2 ) \cf4 as \cf2 replies_Data_entry_Back_office\cf4 ,\
+count\cf2 (\cf4 distinct case when \cf2 category_l2_name_en = \cf6 'Part - Time' \cf4 then \cf2 reply_nk \cf4 else null end\cf2 ) \cf4 as \cf2 replies_Part_Time\cf4 ,\
+count\cf2 (\cf4 distinct case when \cf2 category_l2_name_en = \cf6 'Office Assistant' \cf4 then \cf2 reply_nk \cf4 else null end\cf2 ) \cf4 as \cf2 replies_Office_Assistant\cf4 ,\
+count\cf2 (\cf4 distinct case when \cf2 category_l2_name_en = \cf6 'Cook' \cf4 then \cf2 reply_nk \cf4 else null end\cf2 ) \cf4 as \cf2 replies_Cook\cf4 ,\
+count\cf2 (\cf4 distinct case when \cf2 category_l2_name_en = \cf6 'Designer' \cf4 then \cf2 reply_nk \cf4 else null end\cf2 ) \cf4 as \cf2 replies_Designer\cf4 ,\
+count\cf2 (\cf4 distinct case when \cf2 category_l2_name_en = \cf6 'Receptionist & Front office' \cf4 then \cf2 reply_nk \cf4 else null end\cf2 ) \cf4 as \cf2 replies_Receptionist_Front_office\cf4 ,\
+count\cf2 (\cf4 distinct case when \cf2 category_l2_name_en \cf4 like \cf6 'Delivery%' \cf4 then \cf2 reply_nk \cf4 else null end\cf2 ) \cf4 as \cf2 replies_Delivery_Collection\cf4 ,\
+count\cf2 (\cf4 distinct case when \cf2 category_l2_name_en = \cf6 'Driver' \cf4 then \cf2 reply_nk \cf4 else null end\cf2 ) \cf4 as \cf2 replies_Driver\cf4 ,\
+count\cf2 (\cf4 distinct case when \cf2 category_l2_name_en \cf4 like \cf6 'Clerical%' \cf4 then \cf2 reply_nk \cf4 else null end\cf2 ) \cf4 as \cf2 replies_Clerical_Administration\cf4 ,\
+count\cf2 (\cf4 distinct case when \cf2 category_l2_name_en = \cf6 'Teacher' \cf4 then \cf2 reply_nk \cf4 else null end\cf2 ) \cf4 as \cf2 replies_Teacher\cf4 ,\
+count\cf2 (\cf4 distinct case when \cf2 category_l2_name_en \cf4 like \cf6 'IT Engineer%' \cf4 then \cf2 reply_nk \cf4 else null end\cf2 ) \cf4 as \cf2 replies_IT_Engineer_Developer\cf4 ,\
+count\cf2 (\cf4 distinct case when \cf2 category_l2_name_en \cf4 like \cf6 'Sales%' \cf4 then \cf2 reply_nk \cf4 else null end\cf2 ) \cf4 as \cf2 replies_Sales_Marketing\cf4 ,\
+count\cf2 (\cf4 distinct case when \cf2 category_l2_name_en = \cf6 'Others' \cf4 then \cf2 reply_nk \cf4 else null end\cf2 ) \cf4 as \cf2 replies_Others\cf4 ,\
+count\cf2 (\cf4 distinct case when \cf2 category_l2_name_en \cf4 like \cf6 'Operator%' \cf4 then \cf2 reply_nk \cf4 else null end\cf2 ) \cf4 as \cf2 replies_Operator_Technician\cf4 ,\
+count\cf2 (\cf4 distinct case when \cf2 category_l2_name_en = \cf6 'Other Vehicles' \cf4 then \cf2 reply_nk \cf4 else null end\cf2 ) \cf4 as \cf2 replies_Other_Vehicles\cf4 ,\
+count\cf2 (\cf4 distinct case when \cf2 category_l2_name_en = \cf6 'Cars' \cf4 then \cf2 reply_nk \cf4 else null end\cf2 ) \cf4 as \cf2 replies_Cars\cf4 ,\
+count\cf2 (\cf4 distinct case when \cf2 category_l2_name_en = \cf6 'Commercial Vehicles' \cf4 then \cf2 reply_nk \cf4 else null end\cf2 ) \cf4 as \cf2 replies_Commercial_Vehicles\cf4 ,\
+count\cf2 (\cf4 distinct case when \cf2 category_l2_name_en \cf4 like \cf6 'Movers%' \cf4 then \cf2 reply_nk \cf4 else null end\cf2 ) \cf4 as \cf2 replies_Movers_Packers\cf4 ,\
+count\cf2 (\cf4 distinct case when \cf2 category_l2_name_en \cf4 like \cf6 'Education%' \cf4 then \cf2 reply_nk \cf4 else null end\cf2 ) \cf4 as \cf2 replies_Education_Classes\cf4 ,\
+count\cf2 (\cf4 distinct case when \cf2 category_l2_name_en = \cf6 'Event Services' \cf4 then \cf2 reply_nk \cf4 else null end\cf2 ) \cf4 as \cf2 replies_Event_Services\cf4 ,\
+count\cf2 (\cf4 distinct case when \cf2 category_l2_name_en \cf4 like \cf6 'Maids%' \cf4 then \cf2 reply_nk \cf4 else null end\cf2 ) \cf4 as \cf2 replies_Maids_Domestic_Help\cf4 ,\
+count\cf2 (\cf4 distinct case when \cf2 category_l2_name_en \cf4 like \cf6 'Drivers%' \cf4 then \cf2 reply_nk \cf4 else null end\cf2 ) \cf4 as \cf2 replies_Drivers_Taxi\cf4 ,\
+count\cf2 (\cf4 distinct case when \cf2 category_l2_name_en = \cf6 'Web Development' \cf4 then \cf2 reply_nk \cf4 else null end\cf2 ) \cf4 as \cf2 replies_Web_Development\cf4 ,\
+count\cf2 (\cf4 distinct case when \cf2 category_l2_name_en \cf4 like \cf6 'Electronics%' \cf4 then \cf2 reply_nk \cf4 else null end\cf2 ) \cf4 as \cf2 replies_Electronics_Computer\cf4 ,\
+count\cf2 (\cf4 distinct case when \cf2 category_l2_name_en = \cf6 'Other Services' \cf4 then \cf2 reply_nk \cf4 else null end\cf2 ) \cf4 as \cf2 replies_Other_Services\cf4 ,\
+count\cf2 (\cf4 distinct case when \cf2 category_l2_name_en \cf4 like \cf6 'Health%' \cf4 then \cf2 reply_nk \cf4 else null end\cf2 ) \cf4 as \cf2 replies_Health_Beauty\cf4 ,\
+count\cf2 (\cf4 distinct case when \cf2 category_l2_name_en \cf4 like \cf6 'Beds%' \cf4 then \cf2 reply_nk \cf4 else null end\cf2 ) \cf4 as \cf2 replies_Beds_Wardrobes\cf4 ,\
+count\cf2 (\cf4 distinct case when \cf2 category_l2_name_en \cf4 like \cf6 'Sofa%' \cf4 then \cf2 reply_nk \cf4 else null end\cf2 ) \cf4 as \cf2 replies_Sofa_Dining\cf4 ,\
+count\cf2 (\cf4 distinct case when \cf2 category_l2_name_en = \cf6 'Kids Furniture' \cf4 then \cf2 reply_nk \cf4 else null end\cf2 ) \cf4 as \cf2 replies_Kids_Furniture\cf4 ,\
+count\cf2 (\cf4 distinct case when \cf2 category_l2_name_en = \cf6 'Other Household Items' \cf4 then \cf2 reply_nk \cf4 else null end\cf2 ) \cf4 as \cf2 replies_Other_Household_Items\cf4 ,\
+count\cf2 (\cf4 distinct case when \cf2 category_l2_name_en \cf4 like \cf6 'Home Decor%' \cf4 then \cf2 reply_nk \cf4 else null end\cf2 ) \cf4 as \cf2 replies_Home_Decor_Garden\cf4 ,\
+count\cf2 (\cf4 distinct case when \cf2 category_l2_name_en = \cf6 'Sports Equipment' \cf4 then \cf2 reply_nk \cf4 else null end\cf2 ) \cf4 as \cf2 replies_Sports_Equipment\cf4 ,\
+count\cf2 (\cf4 distinct case when \cf2 category_l2_name_en = \cf6 'Books' \cf4 then \cf2 reply_nk \cf4 else null end\cf2 ) \cf4 as \cf2 replies_Books\cf4 ,\
+count\cf2 (\cf4 distinct case when \cf2 category_l2_name_en = \cf6 'Musical Instruments' \cf4 then \cf2 reply_nk \cf4 else null end\cf2 ) \cf4 as \cf2 replies_Musical_Instruments\cf4 ,\
+count\cf2 (\cf4 distinct case when \cf2 category_l2_name_en = \cf6 'Other Hobbies' \cf4 then \cf2 reply_nk \cf4 else null end\cf2 ) \cf4 as \cf2 replies_Other_Hobbies\cf4 ,\
+count\cf2 (\cf4 distinct case when \cf2 category_l2_name_en \cf4 like \cf6 'Gym%' \cf4 then \cf2 reply_nk \cf4 else null end\cf2 ) \cf4 as \cf2 replies_Gym_Fitness\cf4 ,\
+count\cf2 (\cf4 distinct case when \cf2 category_l2_name_en = \cf6 'Men' \cf4 then \cf2 reply_nk \cf4 else null end\cf2 ) \cf4 as \cf2 replies_Men\cf4 ,\
+count\cf2 (\cf4 distinct case when \cf2 category_l2_name_en = \cf6 'Women' \cf4 then \cf2 reply_nk \cf4 else null end\cf2 ) \cf4 as \cf2 replies_Women\cf4 ,\
+count\cf2 (\cf4 distinct case when \cf2 category_l2_name_en = \cf6 'Footwear' \cf4 then \cf2 reply_nk \cf4 else null end\cf2 ) \cf4 as \cf2 replies_Footwear\cf4 ,\
+count\cf2 (\cf4 distinct case when \cf2 category_l2_name_en = \cf6 'Kids' \cf4 then \cf2 reply_nk \cf4 else null end\cf2 ) \cf4 as \cf2 replies_Kids\cf4 ,\
+count\cf2 (\cf4 distinct case when \cf2 category_l2_name_en = \cf6 'Clothes' \cf4 then \cf2 reply_nk \cf4 else null end\cf2 ) \cf4 as \cf2 replies_Clothes\cf4 ,\
+count\cf2 (\cf4 distinct case when \cf2 category_l2_name_en \cf4 like \cf6 'Prams%' \cf4 then \cf2 reply_nk \cf4 else null end\cf2 ) \cf4 as \cf2 replies_Prams_Walkers\cf4 ,\
+count\cf2 (\cf4 distinct case when \cf2 category_l2_name_en \cf4 like \cf6 'Kitchen%' \cf4 then \cf2 reply_nk \cf4 else null end\cf2 ) \cf4 as \cf2 replies_Kitchen_Other_Appliances\cf4 ,\
+count\cf2 (\cf4 distinct case when \cf2 category_l2_name_en \cf4 like \cf6 'Computers%' \cf4 then \cf2 reply_nk \cf4 else null end\cf2 ) \cf4 as \cf2 replies_Computers_Laptops\cf4 ,\
+count\cf2 (\cf4 distinct case when \cf2 category_l2_name_en \cf4 like \cf6 'Hard Disks, Printers%' \cf4 then \cf2 reply_nk \cf4 else null end\cf2 ) \cf4 as \cf2 replies_Hard_Disks_Printers_Monitors\cf4 ,\
+count\cf2 (\cf4 distinct case when \cf2 category_l2_name_en = \cf6 'Computer Accessories' \cf4 then \cf2 reply_nk \cf4 else null end\cf2 ) \cf4 as \cf2 replies_Computer_Accessories\cf4 ,\
+count\cf2 (\cf4 distinct case when \cf2 category_l2_name_en \cf4 like \cf6 'Cameras%' \cf4 then \cf2 reply_nk \cf4 else null end\cf2 ) \cf4 as \cf2 replies_Cameras_Lenses\cf4 ,\
+count\cf2 (\cf4 distinct case when \cf2 category_l2_name_en = \cf6 'TVs,  Video - Audio' \cf4 then \cf2 reply_nk \cf4 else null end\cf2 ) \cf4 as \cf2 replies_TVs_Video_Audio\cf4 ,\
+count\cf2 (\cf4 distinct case when \cf2 category_l2_name_en = \cf6 'Washing Machines' \cf4 then \cf2 reply_nk \cf4 else null end\cf2 ) \cf4 as \cf2 replies_Washing_Machines\cf4 ,\
+count\cf2 (\cf4 distinct case when \cf2 category_l2_name_en = \cf6 'Fridges' \cf4 then \cf2 reply_nk \cf4 else null end\cf2 ) \cf4 as \cf2 replies_Fridges\cf4 ,\
+count\cf2 (\cf4 distinct case when \cf2 category_l2_name_en = \cf6 'ACs' \cf4 then \cf2 reply_nk \cf4 else null end\cf2 ) \cf4 as \cf2 replies_ACs\cf4 ,\
+count\cf2 (\cf4 distinct case when \cf2 category_l2_name_en = \cf6 'Fridge - AC - Washing Machine' \cf4 then \cf2 reply_nk \cf4 else null end\cf2 ) \cf4 as \cf2 replies_Fridge_AC_Washing_Machine\cf4 ,\
+count\cf2 (\cf4 distinct case when \cf2 category_l2_name_en \cf4 like \cf6 'Computers%' \cf4 then \cf2 reply_nk \cf4 else null end\cf2 ) \cf4 as \cf2 replies_Computers_Accessories\cf4 ,\
+count\cf2 (\cf4 distinct case when \cf2 category_l2_name_en \cf4 like \cf6 'Cameras%' \cf4 then \cf2 reply_nk \cf4 else null end\cf2 ) \cf4 as \cf2 replies_Cameras_Accessories\cf4 ,\
+count\cf2 (\cf4 distinct case when \cf2 category_l2_name_en = \cf6 'TV - Video - Audio' \cf4 then \cf2 reply_nk \cf4 else null end\cf2 ) \cf4 as \cf2 replies_TV_Video_Audio\cf4 ,\
+count\cf2 (\cf4 distinct case when \cf2 category_l2_name_en \cf4 like \cf6 'Games%' \cf4 then \cf2 reply_nk \cf4 else null end\cf2 ) \cf4 as \cf2 replies_Games_Entertainment\cf4 ,\
+count\cf2 (\cf4 distinct case when \cf2 category_l2_name_en \cf4 like \cf6 'PG%' \cf4 then \cf2 reply_nk \cf4 else null end\cf2 ) \cf4 as \cf2 replies_PG_Guest_Houses\cf4 ,\
+count\cf2 (\cf4 distinct case when \cf2 category_l2_name_en \cf4 like \cf6 'For Rent: Houses%' \cf4 then \cf2 reply_nk \cf4 else null end\cf2 ) \cf4 as \cf2 replies_For_Rent_Houses_Apartments\cf4 ,\
+count\cf2 (\cf4 distinct case when \cf2 category_l2_name_en \cf4 like \cf6 'For Sale: Houses%' \cf4 then \cf2 reply_nk \cf4 else null end\cf2 ) \cf4 as \cf2 replies_For_Sale_Houses_Apartments\cf4 ,\
+count\cf2 (\cf4 distinct case when \cf2 category_l2_name_en \cf4 like \cf6 'Lands%' \cf4 then \cf2 reply_nk \cf4 else null end\cf2 ) \cf4 as \cf2 replies_Lands_Plots\cf4 ,\
+count\cf2 (\cf4 distinct case when \cf2 category_l2_name_en \cf4 like \cf6 'For Rent: Shops%' \cf4 then \cf2 reply_nk \cf4 else null end\cf2 ) \cf4 as \cf2 replies_For_Rent_Shops_Offices\cf4 ,\
+count\cf2 (\cf4 distinct case when \cf2 category_l2_name_en \cf4 like \cf6 'For Sale: Shops%' \cf4 then \cf2 reply_nk \cf4 else null end\cf2 ) \cf4 as \cf2 replies_For_Sale_Shops_Offices\
+   \cf4 from \cf2 ods.fact_replies a\
+    \cf4 left join \cf2 ods.dim_categories b \cf4 on \cf2 a.category_sk=b.category_sk \cf4 and \cf2 b.country_sk=\cf6 'olx|asia|in'\
+ \cf4 where\
+       \cf2 a.country_sk=\cf6 'olx|asia|in'\
+\cf4 group by \cf7 1\
+\
+\
+\cf4 drop table if exists \cf2 repliers\cf4 ;\
+select\
+  \cf2 panamera_user_sk\
+   \cf4 into temp table \cf2 repliers\
+\cf4 from \cf2 ods.fact_replies\
+\cf4 where \cf2 country_sk=\cf6 'olx|asia|in'\
+ \cf4 and \cf2 reply_num_panamera=\cf7 1\
+\cf4 and \cf2 date_sent_nk \cf4 between \cf6 '2019-07-01' \cf4 and \cf6 '2019-10-01'\
+\cf4 order by \cf2 random() \cf4 limit \cf7 50000\
+\cf4 ;\
+\
+\
+drop table if exists \cf2 users_replies\cf4 ;\
+select\
+  \cf2 a.panamera_user_sk\cf4 ,\
+  \cf2 category_l2_name_en\cf4 ,\
+  count\cf2 (\cf4 distinct \cf2 reply_nk) \cf4 as \cf2 replies\
+    \cf4 into temp table \cf2 users_replies\
+   \cf4 from \cf2 ods.fact_replies a\
+    \cf4 left join \cf2 ods.dim_categories b \cf4 on \cf2 a.category_sk=b.category_sk \cf4 and \cf2 b.country_sk=\cf6 'olx|asia|in'\
+    \cf4 join \cf2 repliers \cf4 c on \cf2 a.panamera_user_sk=\cf4 c\cf2 .panamera_user_sk\
+ \cf4 where\
+       \cf2 a.country_sk=\cf6 'olx|asia|in'\
+   \cf4 and \cf2 reply_num_panamera=\cf7 1\
+   \cf4 and \cf2 date_sent_nk \cf4 between \cf6 '2019-07-01' \cf4 and \cf6 '2019-10-01'\
+\cf4 group by \cf7 1\cf4 ,\cf7 2\
+\
+\cf4 drop table if exists \cf2 users_replies2\cf4 ;\
+select\
+  \cf2 a.panamera_user_sk \cf4 ,\
+  \cf2 category_l2_name_en category_l2_name_en2\cf4 ,\
+  count\cf2 (\cf4 distinct \cf2 reply_nk) \cf4 as \cf2 replies2\
+    \cf4 into temp table \cf2 users_replies2\
+   \cf4 from \cf2 ods.fact_replies a\
+    \cf4 left join \cf2 ods.dim_categories b \cf4 on \cf2 a.category_sk=b.category_sk \cf4 and \cf2 b.country_sk=\cf6 'olx|asia|in'\
+    \cf4 join \cf2 repliers \cf4 c on \cf2 a.panamera_user_sk=\cf4 c\cf2 .panamera_user_sk\
+ \cf4 where\
+       \cf2 a.country_sk=\cf6 'olx|asia|in'\
+   \cf4 and \cf2 reply_num_panamera=\cf7 1\
+   \cf4 and \cf2 date_sent_nk \cf4 between \cf6 '2019-07-01' \cf4 and \cf6 '2019-10-01'\
+\cf4 group by \cf7 1\cf4 ,\cf7 2\
+\
+\cf4 drop table if exists \cf2 df\cf4 ;\
+select\
+  \cf2 a.panamera_user_sk\cf4 ,\
+  \cf2 a.category_l2_name_en\cf4 ,\
+  \cf2 b.category_l2_name_en2\cf4 ,\
+  \cf2 b.replies2\
+ \cf4 into temp table \cf2 df\
+    \cf4 from \cf2 users_replies a\
+ \cf4 join \cf2 users_replies2 b \cf4 on \cf2 a.panamera_user_sk=b.panamera_user_sk\
+\cf4 order by \cf2 a.panamera_user_sk\cf4 ,\cf2 a.category_l2_name_en\
+\
+\cf4 select \cf2 * \cf4 from \cf2 df\
+\
+\
+\cf9 -------------------------------------------\
+\
+\
+\cf4 drop table if exists \cf2 session_longs\cf4 ;\
+select\
+ \cf2 session_long\
+  \cf4 into temp table \cf2 session_longs\
+\cf4 from \cf2 ods.panameraolx_asia_hydra_ninja_android_last_3_months\
+ \cf4 where \cf2 trackevent=\cf6 'view_item'\
+\cf4 group by \cf7 1\
+\cf4 order by \cf2 random() \cf4 limit \cf7 50000\
+\
+\cf4 drop table if exists \cf2 view_item_users\cf4 ;\
+select\
+ c\cf2 .session_long\cf4 ,\
+ \cf2 category_l1_name_en\cf4 ,\
+ count\cf2 (trackevent) \cf4 as \cf2 qty_view_item\
+  \cf4 into temp table \cf2 view_item_users\
+    \cf4 from \cf2 ods.panameraolx_asia_hydra_ninja_android_last_3_months a\
+     \cf4 left join \cf2 ods.dim_categories b \cf4 on \cf2 a.category_sk=b.category_sk \cf4 and \cf2 b.country_sk=\cf6 'olx|asia|in'\
+     \cf4 join \cf2 session_longs \cf4 c on \cf2 a.session_long=\cf4 c\cf2 .session_long\
+ \cf4 where \cf2 a.country_sk=\cf6 'olx|asia|in'\
+  \cf4 and \cf2 trackevent = \cf6 'view_item'\
+\cf4 group by \cf7 1\cf4 ,\cf7 2\
+\
+\cf4 drop table if exists \cf2 view_item_users2\cf4 ;\
+select\
+    \cf2 session_long\cf4 ,\
+    \cf2 category_l1_name_en category_l1_name_en2\cf4 ,\
+    \cf2 qty_view_item qty_view_item2\
+\cf4 into temp table \cf2 view_item_users2\
+  \cf4 from \cf2 view_item_users\
+\
+\cf4 ;drop table if exists \cf2 df\cf4 ;\
+select\
+  \cf2 a.session_long\cf4 ,\
+  \cf2 a.category_l1_name_en\cf4 ,\
+  \cf2 b.category_l1_name_en2\cf4 ,\
+  \cf2 b.qty_view_item2\
+ \cf4 into temp table \cf2 df\
+    \cf4 from \cf2 view_item_users a\
+ \cf4 join \cf2 view_item_users2 b \cf4 on \cf2 a.session_long=b.session_long\
+\cf4 order by \cf2 a.session_long\cf4 ,\cf2 a.category_l1_name_en\cf4 ;\
+\
+\
+select \cf2 * \cf4 from \cf2 df\
+\
+\
+\
+\cf4 select\
+  \cf2 category_l2_name_en\
+\cf4 from \cf2 ods.dim_categories\
+  \cf4 where \cf5 country_sk\cf2 =\cf6 'olx|asia|in'\
+ \cf4 group by \cf5 category_l2_name_en\
+\
+\
+\
+\cf4 drop table if exists \cf2 tabladechequeo\cf4 ;\
+\cf2 (\cf4 select \cf5 user_sk\cf4 , \cf5 listing_sk\cf4 , 
+\f2\i \cf8 max
+\f1\i0 \cf2 (\cf4 case when \cf5 trackevent \cf4 in \cf2 ( \cf6 'item_chat_tap_sms'\cf4 , \cf6 'item_tap_sms'\cf2 ) \cf4 then \cf7 1 \cf4 else \cf7 0 \cf4 end\cf2 ) \cf4 as \cf2 reply_sms\cf4 ,\
+        
+\f2\i \cf8 max
+\f1\i0 \cf2 (\cf4 case when \cf5 trackevent \cf4 in \cf2 ( \cf6 'item_tap_call'\cf2 ) \cf4 then \cf7 1 \cf4 else \cf7 0 \cf4 end\cf2 ) \cf4 as \cf2 reply_call\cf4 ,\
+        
+\f2\i \cf8 max
+\f1\i0 \cf2 (\cf4 case when \cf5 trackevent \cf4 in \cf2 ( \cf6 'item_chat_tap_send_1st_reply'\cf2 ) \cf4 then \cf7 1 \cf4 else \cf7 0 \cf4 end\cf2 ) \cf4 as \cf2 reply_chat\cf4 ,\
+        
+\f2\i \cf8 min
+\f1\i0 \cf2 (\cf5 date_event_nk\cf2 ) \cf4 as \cf2 date_event_nk\
+  \cf4 into temp table \cf2 tabladechequeo\
+\cf4 FROM \cf2 (\cf4 select \cf5 user_sk\cf4 , \cf5 listing_sk\cf4 , \cf5 trackevent\cf4 , \cf5 country_sk\cf4 , \cf5 date_event_nk \cf4 from  \cf2 ods.panameraolx_asia_hydra_ninja_android_last_month\
+    \cf4 union all select \cf5 user_sk\cf4 , \cf5 listing_sk\cf4 , \cf5 trackevent\cf4 , \cf5 country_sk\cf4 , \cf5 date_event_nk \cf4 from \cf2 ods.panameraolx_asia_hydra_ninja_ios_last_month\
+    \cf4 union all select \cf5 user_sk\cf4 , \cf5 listing_sk\cf4 , \cf5 trackevent\cf4 , \cf5 country_sk\cf4 , \cf5 date_event_nk \cf4 from \cf2 ods.panameraolx_asia_hydra_ninja_web_last_month)\
+\uc0\u8203 \
+\cf4 where \cf5 country_sk \cf2 = \cf6 'olx|asia|in'\
+\cf4 and \cf5 trackevent \cf4 in \cf2 (\cf6 'item_tap_call'\cf4 , \cf6 'item_chat_tap_sms'\cf4 , \cf6 'item_tap_sms'\cf4 , \cf6 'item_chat_tap_send_1st_reply'\cf2 )\
+\cf4 and \cf5 date_event_nk\cf2 =\cf6 '2019-10-01'\
+\cf4 group by \cf5 1\cf4 ,\cf5 2\cf2 )\
+\
+\
+\cf4 drop table if exists \cf2 odsfactreplies\cf4 ;\
+select\
+  \cf5 panamera_user_sk\cf4 ,\
+  \cf5 listing_sk\cf4 ,\
+  \cf5 date_sent_nk\
+  \cf4 into temp table \cf2 odsfactreplies\
+    \cf4 from \cf2 ods.fact_replies\
+\cf4 where \cf5 country_sk\cf2 =\cf6 'olx|asia|in' \cf4 and \cf5 date_sent_nk\cf2 =\cf6 '2019-10-01'\
+\cf4 group by \cf5 1\cf4 ,\cf5 2\cf4 ,\cf5 3\
+\
+\
+\cf4 select\
+ \cf2 a.\cf8 *\cf4 ,\
+ \cf2 b.\cf8 *\
+  \cf4 from \cf2 odsfactreplies a\
+\cf4 left join \cf2 tabladechequeo b \cf4 on \cf2 a.\cf5 panamera_user_sk\cf2 =b.\cf5 user_sk \cf4 and \cf2 a.\cf5 listing_sk\cf2 =b.\cf5 listing_sk\
+ \cf4 where \cf5 user_sk \cf4 is null\
+limit \cf7 100\
+\
+\
+\cf4 select\
+ \cf8 *\
+\cf4 from \cf2 ods.panameraolx_asia_hydra_ninja_android_last_month\
+\cf4 where \cf5 user_sk\cf2 =\cf6 'olx|asia|in|platform|id|273774971' \cf4 and \cf5 listing_sk\cf2 =\cf6 'olx|asia|in|1537989494'\
+\
+\
+\cf9 -----------------------------------------------------------------------------\
+--------------------- BUNDLE ANALYSIS : DUB / DAU ---------------------------\
+\
+----- Bundle\
+\
+\cf4 drop table if exists \cf2 dau\cf4 ;\
+select\
+ year \cf2 || \cf6 '-' \cf2 || \cf4 month \cf2 || \cf6 '-' \cf2 || \cf4 day as \cf2 date\cf4 ,\
+ count\cf2 (\cf4 distinct \cf2 meta_session_long) \cf4 as \cf2 dau\
+  \cf4 into temp table \cf2 dau\
+    \cf4 from \cf2 spectrum.hydra_p_olx_android\
+ \cf4 where \cf2 ((params_en \cf4 NOT IN \cf2 (\cf6 'app_open'\cf4 , \cf6 'on_create'\cf4 , \cf6 'apps'\cf4 , \cf6 'push_dis'\cf4 ,\cf6 'pushDis'\cf4 , \cf6 'push_rcv'\cf4 , \cf6 'pushRcv'\cf4 , \cf6 'UAReg'\cf4 , \cf6 'ua_reg'\cf4 , \cf6 'uareg'\cf4 ,\cf6 'push_dismissed'\cf4 , \cf6 'push_show'\cf4 , \cf6 'fetching_matrix'\cf4 , \cf6 'not_found'\cf4 ,\cf6 'permissions_impression'\cf4 ,\cf6 'userBadgeCount'\cf4 ,\cf6 'test_assignment'\cf4 ,\cf6 'test_impression'\cf4 ,\cf6 'test_discovered'\cf4 ,\cf6 'FCMReg'\cf4 ,\cf6 'APNSReg'\cf4 ,\cf6 'appOpn'\cf4 ,\cf6 'appOpen'\cf4 ,\cf6 'google_play_services'\cf4 ,\cf6 'fetchTestDefinitionsError'\cf4 ,\cf6 'messages_scheduler_ended'\cf4 ,\cf6 'messages_scheduler_started'\cf4 ,\cf6 'chat_auth_fail'\cf4 ,\cf6 'item_chat_multi_delete'\cf2 ) \cf4 AND \cf2 params_en \cf4 IS NOT NULL AND \cf2 params_en \cf4 NOT LIKE \cf6 'b2c%'\cf2 ))\
+ \cf4 and year\cf2 =\cf7 2019\
+ \cf4 and month in \cf2 (\cf7 9\cf4 ,\cf7 10\cf4 ,\cf7 11\cf2 )\
+ \cf4 and \cf2 params_cc \cf4 like \cf6 '%za%'\
+ \cf4 and \cf2 params_v \cf4 like \cf6 '%13.23.03%'\
+\cf4 group by \cf7 1\
+\
+\
+\cf4 drop table if exists \cf2 dub\cf4 ;\
+select\
+ year \cf2 || \cf6 '-' \cf2 || \cf4 month \cf2 || \cf6 '-' \cf2 || \cf4 day as \cf2 date\cf4 ,\
+ count\cf2 (\cf4 distinct \cf2 meta_session_long) \cf4 as \cf2 dub\
+  \cf4 into temp table \cf2 dub\
+    \cf4 from \cf2 spectrum.hydra_p_olx_android\
+\cf4 where \cf2 params_en \cf4 in \cf2 (\cf6 'item_tap_call' \cf4 , \cf6 'item_chat_tap_send_1st_reply' \cf4 , \cf6 'item_tap_sms' \cf4 , \cf6 'item_chat_tap_sms'\cf2 )\
+ \cf4 and year\cf2 =\cf7 2019\
+ \cf4 and month in \cf2 (\cf7 9\cf4 ,\cf7 10\cf4 ,\cf7 11\cf2 )\
+ \cf4 and \cf2 params_cc \cf4 like \cf6 '%za%'\
+ \cf4 and \cf2 params_v \cf4 like \cf6 '%13.23.03%'\
+\cf4 group by \cf7 1\
+\
+\cf4 select\
+ \cf2 a.*\cf4 ,\
+ \cf2 b.dub\
+ \cf4 from \cf2 dau a\
+ \cf4 left join \cf2 dub b \cf4 on \cf2 a.date=b.date\
+\cf4 order by \cf2 date\
+\
+\cf4 select\
+\cf2 app_version\cf4 ,\
+count\cf2 (\cf4 distinct \cf2 session_long) \cf4 as \cf2 dau\
+ \cf4 from \cf2 ods.fact_user_hydra_browsing_activity\
+\cf4 where \cf2 country_sk=\cf6 'olx|mea|za'\
+\cf4 and \cf2 date_nk=\cf6 '2019-10-3'\
+\cf4 and \cf2 channel_sk \cf4 like \cf6 '%android%'\
+\cf4 group by \cf7 1\
+\
+\
+\cf9 ----------------------------------------------------------------------------\
+---------- How many of home starters have bundles ? ------------------------\
+----------------------------------------------------------------------------\
+\
+\cf4 drop table if exists \cf2 app_version_with_bundles\cf4 ;\
+select\
+ \cf2 params_v\
+ \cf4 into temp table \cf2 app_version_with_bundles\
+  \cf4 from \cf2 spectrum.hydra_p_olx_android\
+\cf4 where \cf2 params_resultset_type \cf4 like \cf6 '%BUNDLE%'\
+  \cf4 and \cf2 params_cc \cf4 like \cf6 '%za%'\
+\cf4 group by \cf7 1\
+\
+\cf4 drop table if exists \cf2 dau\cf4 ;\
+select\
+ year \cf2 || \cf6 '-' \cf2 || \cf4 month \cf2 || \cf6 '-' \cf2 || \cf4 day as \cf2 date\cf4 ,\
+ count\cf2 (\cf4 distinct \cf2 meta_session_long) \cf4 as \cf2 dau\
+  \cf4 into temp table \cf2 dau\
+    \cf4 from \cf2 spectrum.hydra_p_olx_android a\
+      \cf4 join \cf2 app_version_with_bundles b \cf4 on \cf2 a.params_v=b.params_v\
+ \cf4 where \cf2 ((params_en \cf4 NOT IN \cf2 (\cf6 'app_open'\cf4 , \cf6 'on_create'\cf4 , \cf6 'apps'\cf4 , \cf6 'push_dis'\cf4 ,\cf6 'pushDis'\cf4 , \cf6 'push_rcv'\cf4 , \cf6 'pushRcv'\cf4 , \cf6 'UAReg'\cf4 , \cf6 'ua_reg'\cf4 , \cf6 'uareg'\cf4 ,\cf6 'push_dismissed'\cf4 , \cf6 'push_show'\cf4 , \cf6 'fetching_matrix'\cf4 , \cf6 'not_found'\cf4 ,\cf6 'permissions_impression'\cf4 ,\cf6 'userBadgeCount'\cf4 ,\cf6 'test_assignment'\cf4 ,\cf6 'test_impression'\cf4 ,\cf6 'test_discovered'\cf4 ,\cf6 'FCMReg'\cf4 ,\cf6 'APNSReg'\cf4 ,\cf6 'appOpn'\cf4 ,\cf6 'appOpen'\cf4 ,\cf6 'google_play_services'\cf4 ,\cf6 'fetchTestDefinitionsError'\cf4 ,\cf6 'messages_scheduler_ended'\cf4 ,\cf6 'messages_scheduler_started'\cf4 ,\cf6 'chat_auth_fail'\cf4 ,\cf6 'item_chat_multi_delete'\cf2 ) \cf4 AND \cf2 params_en \cf4 IS NOT NULL AND \cf2 params_en \cf4 NOT LIKE \cf6 'b2c%'\cf2 ))\
+ \cf4 and year\cf2 =\cf7 2019\
+ \cf4 and month in \cf2 (\cf7 9\cf4 ,\cf7 10\cf4 ,\cf7 11\cf2 )\
+ \cf4 and \cf2 params_cc \cf4 like \cf6 '%za%'\
+\cf4 group by \cf7 1\
+\
+\cf4 drop table if exists \cf2 users_with_bund\cf4 ;\
+select\
+ year \cf2 || \cf6 '-' \cf2 || \cf4 month \cf2 || \cf6 '-' \cf2 || \cf4 day as \cf2 date\cf4 ,\
+ count\cf2 (\cf4 distinct \cf2 meta_session_long) \cf4 as \cf2 user_with_bundle\
+  \cf4 into temp table \cf2 users_with_bund\
+    \cf4 from \cf2 spectrum.hydra_p_olx_android\
+  \cf4 join \cf2 app_version_with_bundles b \cf4 on \cf2 a.params_v=b.params_v\
+ \cf4 where \cf2 params_resultset_type \cf4 like \cf6 '%BUNDLE%'\
+  \cf4 and year\cf2 =\cf7 2019\
+ \cf4 and month in \cf2 (\cf7 9\cf4 ,\cf7 10\cf4 ,\cf7 11\cf2 )\
+ \cf4 and \cf2 params_cc \cf4 like \cf6 '%za%'\
+ \cf4 and \cf2 params_v \cf4 like \cf6 '%13.23.03%'\
+\cf4 group by \cf7 1\
+\
+\cf4 select\
+ \cf2 a.*\cf4 ,\
+ \cf2 b.user_with_bundle\
+    \cf4 from \cf2 dau a\
+ \cf4 left join \cf2 users_with_bund b \cf4 on \cf2 a.date=b.date\
+\cf4 order by \cf2 date\
+\
+\cf9 -----------------------------------------------------------------------------\
+------------------------ Analysis TWO ---------------------------------------\
+-----------------------------------------------------------------------------\
+\
+\cf4 select\
+ count\cf2 (\cf4 distinct \cf2 meta_session_long)\
+    \cf4 from \cf2 spectrum.hydra_p_olx_android a\
+     \cf4 join \cf2 app_version_with_bundles b \cf4 on \cf2 a.params_v=b.params_v\
+ \cf4 where \cf2 ((params_en \cf4 NOT IN \cf2 (\cf6 'app_open'\cf4 , \cf6 'on_create'\cf4 , \cf6 'apps'\cf4 , \cf6 'push_dis'\cf4 ,\cf6 'pushDis'\cf4 , \cf6 'push_rcv'\cf4 , \cf6 'pushRcv'\cf4 , \cf6 'UAReg'\cf4 , \cf6 'ua_reg'\cf4 , \cf6 'uareg'\cf4 ,\cf6 'push_dismissed'\cf4 , \cf6 'push_show'\cf4 , \cf6 'fetching_matrix'\cf4 , \cf6 'not_found'\cf4 ,\cf6 'permissions_impression'\cf4 ,\cf6 'userBadgeCount'\cf4 ,\cf6 'test_assignment'\cf4 ,\cf6 'test_impression'\cf4 ,\cf6 'test_discovered'\cf4 ,\cf6 'FCMReg'\cf4 ,\cf6 'APNSReg'\cf4 ,\cf6 'appOpn'\cf4 ,\cf6 'appOpen'\cf4 ,\cf6 'google_play_services'\cf4 ,\cf6 'fetchTestDefinitionsError'\cf4 ,\cf6 'messages_scheduler_ended'\cf4 ,\cf6 'messages_scheduler_started'\cf4 ,\cf6 'chat_auth_fail'\cf4 ,\cf6 'item_chat_multi_delete'\cf2 ) \cf4 AND \cf2 params_en \cf4 IS NOT NULL AND \cf2 params_en \cf4 NOT LIKE \cf6 'b2c%'\cf2 ))\
+ \cf4 and year\cf2 =\cf7 2019\
+ \cf4 and month \cf2 = \cf7 11 \cf4 and day\cf2 =\cf7 8\
+ \cf4 and \cf2 params_cc \cf4 like \cf6 '%in%'\
+\
+\cf4 drop table if exists \cf2 app_version_with_bundles\cf4 ;\
+select\
+ \cf2 params_v\
+ \cf4 into temp table \cf2 app_version_with_bundles\
+  \cf4 from \cf2 spectrum.hydra_p_olx_android\
+\cf4 where \cf2 params_resultset_type \cf4 like \cf6 '%BUNDLE%'\
+  \cf4 and \cf2 params_cc \cf4 like \cf6 '%in%'\
+\cf4 group by \cf7 1\
+\
+\cf4 drop table if exists \cf2 users_with_bundles\cf4 ;\
+select\
+ \cf2 meta_session_long\cf4 ,\
+ \cf2 params_user_id\cf4 ,\
+ \cf2 params_resultset_id\cf4 ,\
+ CASE WHEN \cf2 params_resultset_type \cf4 like \cf6 '%BUNDLE%' \cf4 then \cf7 1 \cf4 else \cf7 0 \cf4 end as \cf2 bundle\cf4 ,\
+ CASE WHEN \cf2 params_resultset_type \cf4 like \cf6 '%BUNDLE_FAV%' \cf4 then \cf7 1 \cf4 else \cf7 0 \cf4 end as \cf2 bundle_fav\cf4 ,\
+ CASE WHEN \cf2 params_resultset_type \cf4 like \cf6 '%BUNDLE_LAST%' \cf4 then \cf7 1 \cf4 else \cf7 0 \cf4 end as \cf2 bundle_search\cf4 ,\
+ CASE WHEN \cf2 params_resultset_type \cf4 like \cf6 '%BUNDLE_NEARBY%' \cf4 then \cf7 1 \cf4 else \cf7 0 \cf4 end as \cf2 bundle_nearbyads\
+   \cf4 into temp table \cf2 users_with_bundles\
+  \cf4 from \cf2 spectrum.hydra_p_olx_android a\
+   \cf4 join \cf2 app_version_with_bundles b \cf4 on \cf2 a.params_v=b.params_v\
+\cf4 where \cf2 params_en = \cf6 'view_listings'\
+ \cf9 --and params_origin is null\
+ \cf4 and \cf2 params_cc \cf4 like \cf6 '%in%'\
+ \cf4 and year\cf2 =\cf7 2019 \cf4 and month\cf2 =\cf7 11 \cf4 and day\cf2 =\cf7 8\
+\cf4 group by \cf7 1\cf4 ,\cf7 2\cf4 ,\cf7 3\cf4 ,\cf7 4\cf4 ,\cf7 5\cf4 ,\cf7 6\cf4 ,\cf7 7\
+\
+\cf4 drop table if exists \cf2 users_with_bundless\cf4 ;\
+select\
+ \cf2 meta_session_long\cf4 ,\
+ \cf2 params_user_id\cf4 ,\
+ \cf2 params_resultset_id\cf4 ,\
+ max\cf2 (bundle) \cf4 as \cf2 bundle\cf4 ,\
+ max\cf2 (bundle_fav) \cf4 as \cf2 bundle_fav\cf4 ,\
+ max\cf2 (bundle_search) \cf4 as \cf2 bundle_search\cf4 ,\
+ max\cf2 (bundle_nearbyads) \cf4 as \cf2 bundle_nearbyads\
+  \cf4 into temp table \cf2 users_with_bundless\
+    \cf4 from \cf2 users_with_bundles a\
+\cf4 group by \cf7 1\cf4 ,\cf7 2\cf4 ,\cf7 3\
+\
+\cf4 drop table if exists \cf2 users_with_bundlesss\cf4 ;\
+select\
+ \cf2 a.*\cf4 ,\
+ \cf2 bundle_fav + bundle_search + bundle_nearbyads \cf4 as \cf2 cantidad_de_bundles\
+ \cf4 into temp table \cf2 users_with_bundlesss\
+    \cf4 from \cf2 users_with_bundless a\
+\
+\
+\cf4 select\
+  count\cf2 (\cf4 distinct case when \cf2 bundle_search=\cf7 1 \cf4 then \cf2 meta_session_long \cf4 else null end\cf2 ) \cf4 as \cf2 dau_search\cf4 ,\
+  count\cf2 (\cf4 distinct case when \cf2 bundle_fav=\cf7 1 \cf4 then \cf2 meta_session_long \cf4 else null end\cf2 ) \cf4 as \cf2 dau_fav\cf4 ,\
+  count\cf2 (\cf4 distinct case when \cf2 bundle_nearbyads=\cf7 1 \cf4 then \cf2 meta_session_long \cf4 else null end\cf2 ) \cf4 as \cf2 dau_nearbyads\cf4 ,\
+  count\cf2 (\cf4 distinct case when \cf2 cantidad_de_bundles>\cf7 0 \cf4 then \cf2 meta_session_long \cf4 else null end\cf2 ) \cf4 as \cf2 dau_exposure\
+ \cf4 from \cf2 users_with_bundlesss\
+\cf4 group by \cf7 1\
+\cf4 limit \cf7 100\
+\
+\cf4 drop table if exists \cf2 item_identification\cf4 ;\
+select\
+  \cf2 a.params_resultset_id\cf4 ,\
+  \cf2 params_item_id\cf4 ,\
+  CASE WHEN \cf2 params_resultset_type \cf4 like \cf6 '%FAV%' \cf4 then \cf7 1 \cf4 else \cf7 0 \cf4 end as \cf2 adview_bundle_fav\cf4 ,\
+  CASE WHEN \cf2 params_resultset_type \cf4 like \cf6 '%LAST%' \cf4 then \cf7 1 \cf4 else \cf7 0 \cf4 end as \cf2 adview_bundle_search\cf4 ,\
+  CASE WHEN \cf2 params_resultset_type \cf4 like \cf6 '%NEARBY%' \cf4 then \cf7 1 \cf4 else \cf7 0 \cf4 end as \cf2 adview_bundle_nearbyads\
+    \cf4 into temp table \cf2 item_identification\
+ \cf4 from \cf2 spectrum.hydra_p_olx_android a\
+    \cf4 join \cf2 app_version_with_bundles \cf4 c on \cf2 a.params_v=\cf4 c\cf2 .params_v\
+    \cf4 join \cf2 (\cf4 select \cf2 params_resultset_id \cf4 from \cf2 users_with_bundles \cf4 group by \cf7 1\cf2 ) b \cf4 on \cf2 a.params_resultset_id=b.params_resultset_id\
+\cf4 where \cf2 params_en = \cf6 'view_item'\
+   \cf4 and \cf2 params_cc \cf4 like \cf6 '%in%'\
+   \cf4 and year\cf2 =\cf7 2019 \cf4 and month \cf2 = \cf7 11 \cf4 and day \cf2 = \cf7 8\
+\
+\cf4 drop table if exists \cf2 users_with_bundles_adview\cf4 ;\
+select\
+\cf2 a.*\cf4 ,\
+\cf2 b.params_item_id\cf4 ,\
+case when \cf2 b.params_item_id \cf4 is not null then \cf7 1 \cf4 else \cf7 0 \cf4 end \cf2 resultset_adview\cf4 ,\
+case when \cf2 b.params_item_id \cf4 is not null then \cf2 b.adview_bundle_fav \cf4 else \cf7 0 \cf4 end as \cf2 adview_bundle_fav\cf4 ,\
+case when \cf2 b.params_item_id \cf4 is not null then \cf2 b.adview_bundle_search \cf4 else \cf7 0 \cf4 end as \cf2 adview_bundle_search\cf4 ,\
+case when \cf2 b.params_item_id \cf4 is not null then \cf2 b.adview_bundle_nearbyads \cf4 else \cf7 0 \cf4 end as \cf2 adview_bundle_nearbyads\
+  \cf4 into temp table \cf2 users_with_bundles_adview\
+  \cf4 from \cf2 users_with_bundlesss a\
+ \cf4 left join \cf2 item_identification b \cf4 on \cf2 a.params_resultset_id=b.params_resultset_id\
+\
+\cf4 drop table if exists \cf2 resulset_id_performance\cf4 ;\
+select\
+  \cf2 params_resultset_id\cf4 ,\
+  \cf2 params_item_id\cf4 ,\
+  count\cf2 (\cf4 distinct case when \cf2 params_en \cf4 in \cf2 (\cf6 'item_chat_tap_send_1st_reply' \cf4 ,\cf6 'item_tap_sms' \cf4 , \cf6 'item_chat_tap_sms'\cf2 ) \cf4 then \cf2 params_item_id \cf4 else null end\cf2 ) \cf4 as \cf2 chats\cf4 ,\
+  count\cf2 (\cf4 distinct case when \cf2 params_en \cf4 in \cf2 (\cf6 'item_tap_call'\cf2 ) \cf4 then \cf2 params_item_id \cf4 else null end\cf2 ) \cf4 as \cf2 calls\
+  \cf4 into temp table \cf2 resulset_id_performance\
+\cf4 from \cf2 spectrum.hydra_p_olx_android\
+\cf4 where \cf2 params_en \cf4 in \cf2 (\cf6 'item_tap_call' \cf4 , \cf6 'item_chat_tap_send_1st_reply' \cf4 , \cf6 'item_tap_sms' \cf4 , \cf6 'item_chat_tap_sms'\cf2 )\
+ \cf4 and \cf2 params_cc \cf4 like \cf6 '%in%'\
+ \cf4 and year \cf2 =\cf7 2019 \cf4 and month \cf2 = \cf7 11 \cf4 and day \cf2 = \cf7 8\
+\cf4 group by \cf7 1\cf4 ,\cf7 2\
+\
+\cf4 drop table if exists \cf2 final\cf4 ;\
+select\
+ \cf2 a.*\cf4 ,\
+ case when \cf2 b.params_resultset_id \cf4 is not null then \cf2 b.chats \cf4 else \cf7 0 \cf4 end as \cf2 chats\cf4 ,\
+ case when \cf2 b.params_resultset_id \cf4 is not null then \cf2 b.calls \cf4 else \cf7 0 \cf4 end as \cf2 calls\
+  \cf4 into temp table \cf2 final\
+    \cf4 from \cf2 users_with_bundles_adview a\
+ \cf4 left join \cf2 resulset_id_performance b \cf4 on \cf2 a.params_resultset_id=b.params_resultset_id \cf4 and \cf2 a.params_item_id=b.params_item_id\
+\
+\cf4 select \cf2 * \cf4 from \cf2 final \cf4 order by \cf2 params_resultset_id \cf4 limit \cf7 500\
+\
+\cf4 select\
+ count\cf2 (\cf4 distinct case when \cf2 bundle_fav=\cf7 1 \cf4 then \cf2 params_resultset_id \cf4 else null end\cf2 ) \cf4 as \cf2 bundle_fav\cf4 ,\
+ count\cf2 (\cf4 distinct case when \cf2 bundle_search=\cf7 1 \cf4 then \cf2 params_resultset_id \cf4 else null end\cf2 ) \cf4 as \cf2 bundle_search\cf4 ,\
+ count\cf2 (\cf4 distinct case when \cf2 bundle_nearbyads=\cf7 1 \cf4 then \cf2 params_resultset_id \cf4 else null end\cf2 ) \cf4 as \cf2 bundle_nearbyads\cf4 ,\
+ count\cf2 (\cf4 distinct case when \cf2 adview_bundle_fav=\cf7 1 \cf4 then \cf2 params_resultset_id \cf4 else null end\cf2 ) \cf4 as \cf2 bundle_adview_fav\cf4 ,\
+ count\cf2 (\cf4 distinct case when \cf2 adview_bundle_search=\cf7 1 \cf4 then \cf2 params_resultset_id \cf4 else null end\cf2 ) \cf4 as \cf2 bundle_adview_search\cf4 ,\
+ count\cf2 (\cf4 distinct case when \cf2 adview_bundle_nearbyads=\cf7 1 \cf4 then \cf2 params_resultset_id \cf4 else null end\cf2 ) \cf4 as \cf2 bundle_adview_nearbyads\cf4 ,\
+ \cf2 sum(\cf4 case when \cf2 adview_bundle_fav=\cf7 1 \cf4 then \cf2 chats+calls \cf4 else null end\cf2 ) \cf4 as \cf2 reply_fav\cf4 ,\
+ \cf2 sum(\cf4 case when \cf2 adview_bundle_search=\cf7 1 \cf4 then \cf2 chats+calls \cf4 else null end\cf2 ) \cf4 as \cf2 reply_search\cf4 ,\
+ \cf2 sum(\cf4 case when \cf2 adview_bundle_nearbyads=\cf7 1 \cf4 then \cf2 chats+calls \cf4 else null end\cf2 ) \cf4 as \cf2 reply_nearbyads\
+\cf4 from \cf2 final\
+\cf4 where \cf2 cantidad_de_bundles=\cf7 3\
+\
+\cf9 ---------------------------------------------------------------------\
+---------------------------------------------------------------------\
+---------------------------------------------------------------------\
+\
+\cf4 select \cf2 * \cf4 from \cf2 ods.dim_geographies \cf4 where \cf2 country_sk=\cf6 'olx|asia|in' \cf4 and \cf2 geography_l3_name_en = \cf6 'Mumbai Central'\
+\
+\cf4 select distinct \cf2 country_sk \cf4 from \cf2 ods.dim_geographies\
+\
+\cf4 select\
+ \cf2 country_sk\cf4 ,\
+ \cf2 geography_level\cf4 ,\
+ count\cf2 (\cf4 distinct \cf2 geography_sk)\
+\cf4 from \cf2 ods.dim_geographies\
+ \cf4 where\
+     \cf2 country_sk \cf4 in \cf2 (\cf6 'olx|asia|in'\cf2 )\
+\cf4 group by \cf7 1\cf4 ,\cf7 2\
+\cf4 limit \cf7 100\
+\
+\
+\cf4 drop table if exists \cf2 active_listings\cf4 ;\
+select\
+  \cf2 id\
+ \cf4 into temp table \cf2 active_listings\
+\cf4 from \cf2 livesync.panamera_ads\
+\cf4 where \cf2 status=\cf6 'active'\
+  \cf4 and \cf2 livesync_dbname=\cf6 'olxin'\
+\cf4 group by \cf7 1\
+\
+\
+\cf4 drop table if exists \cf2 location_of_item\cf4 ;\
+select\
+   \cf2 ad_id\cf4 ,\
+   \cf2 map_lat\cf4 ,\
+   \cf2 map_lon\cf4 ,\
+   \cf2 state\cf4 ,\
+   \cf2 city\cf4 ,\
+   \cf2 district\
+    \cf4 into temp table \cf2 location_of_item\
+  \cf4 from \cf2 livesync.panamera_locations a\
+   \cf4 join \cf2 active_listings b \cf4 on \cf2 a.ad_id=b.id\
+\cf4 where \cf2 livesync_dbname=\cf6 'olxin'\
+\
+\
+\cf4 drop table if exists \cf2 distribution_active_listings\cf4 ;\
+select\
+ left\cf2 (map_lat \cf4 , \cf7 9\cf2 ) \cf4 as \cf2 map_lat\cf4 ,\
+ left\cf2 (map_lon \cf4 , \cf7 9\cf2 ) \cf4 as \cf2 map_lon\cf4 ,\
+ count\cf2 (\cf4 distinct \cf2 ad_id) \cf4 as \cf2 qty_listings\
+  \cf4 into temp table \cf2 distribution_active_listings\
+   \cf4 from \cf2 location_of_item\
+\cf4 group by \cf7 1\cf4 ,\cf7 2\
+\cf4 order by \cf7 3 \cf4 desc\
+\
+drop table if exists \cf2 distribution_active_listings_with_location_tree\cf4 ;\
+select\
+ \cf2 a.*\cf4 ,\
+ \cf2 geography_level \cf4 , \cf2 geography_l1_name_en\cf4 ,\cf2 geography_l2_name_en\cf4 ,\cf2 geography_l3_name_en\
+   \cf4 into temp table \cf2 distribution_active_listings_with_location_tree\
+  \cf4 from \cf2 distribution_active_listings a\
+   \cf4 left join \cf2 (\cf4 select left\cf2 (geography_latitude \cf4 , \cf7 9\cf2 ) \cf4 as \cf2 geography_latitude\cf4 , left\cf2 (geography_longitude \cf4 , \cf7 9\cf2 ) \cf4 as \cf2 geography_longitude \cf4 ,\cf2 geography_level \cf4 , \cf2 geography_l1_name_en\cf4 ,\cf2 geography_l2_name_en\cf4 ,\cf2 geography_l3_name_en \cf4 from \cf2 ods.dim_geographies \cf4 where \cf2 country_sk=\cf6 'olx|asia|in' \cf2 ) b \cf4 on \cf2 a.map_lat=b.geography_latitude \cf4 and \cf2 a.map_lon=b.geography_longitude\
+\cf4 order by \cf2 qty_listings \cf4 desc\
+\
+\
+select\
+ \cf2 geography_level\cf4 ,\
+ \cf2 sum(qty_listings) \cf4 as \cf2 qty\
+  \cf4 from \cf2 distribution_active_listings_with_location_tree\
+\cf4 group by \cf7 1\
+\
+\
+\
+\cf4 select \cf2 geography_latitude \cf4 , left\cf2 (geography_latitude \cf4 , \cf7 9\cf2 ) \cf4 as \cf2 geography_latitude\cf4 , left\cf2 (geography_longitude\cf4 ,\cf7 9\cf2 ) \cf4 as \cf2 geography_longitude \cf4 ,\cf2 geography_level \cf4 , \cf2 geography_l1_name_en\cf4 ,\cf2 geography_l2_name_en\cf4 ,\cf2 geography_l3_name_en \cf4 from \cf2 ods.dim_geographies \cf4 where \cf2 country_sk=\cf6 'olx|asia|in' \cf4 and \cf2 geography_latitude=\cf6 '28.619064'\
+\
+\cf4 select\
+ \cf2 *\
+\cf4 from \cf2 ods.dim_geographies\
+\cf4 where \cf2 country_sk=\cf6 'olx|asia|in'\
+ \cf4 and \cf2 geography_latitude=\cf6 '19.115492' \cf4 or \cf2 geography_latitude = \cf6 '19.1349'\
+\cf4 limit \cf7 100\
+\
+\cf4 select \cf2 * \cf4 from \cf2 distribution_active_listings_with_location_tree \cf4 order by \cf2 qty_listings \cf4 desc limit \cf7 100\
+\
+\cf4 select \cf2 * \cf4 from \cf2 ods.dim_geographies \cf4 where \cf2 country_sk=\cf6 'olx|asia|in' \cf4 and \cf2 geography_l3_name_en \cf4 like \cf6 '%Uttam Nagar%' \cf4 limit \cf7 100\
+\
+\cf4 select \cf2 * \cf4 from \cf2 location_of_item \cf4 where \cf2 map_lat \cf4 like \cf6 '28.619064%'\
+\cf4 select \cf2 * \cf4 from \cf2 ods.dim_geographies \cf4 where \cf2 geography_latitude \cf4 like \cf6 '28.619064%' \cf4 and \cf2 country_sk=\cf6 'olx|asia|in' \cf4 limit \cf7 100\
+\
+\cf4 select\
+\
+ from \cf2 ods.dim_geographies\
+\
+\cf9 -- location 1\
+\
+\cf7 28.61906433 \cf2 = \cf7 28.619064\
+77.05397797 \cf2 = \cf7 77.0539743\
+\
+\
+\cf4 select \cf2 * \cf4 from \cf2 ods.panameraolx_asia_hydra_ninja_android_last_month\
+ \cf4 where \cf2 country_sk=\cf6 'olx|asia|in' \cf4 and \cf2 trackevent=\cf6 'posting_successful_post' \cf4 and \cf2 date_event_nk=\cf6 '2019-10-08'\
+\cf4 limit \cf7 100\
+\
+\
+\
+\cf4 SELECT\
+   replace\cf2 (\cf4 replace\cf2 (json_extract_path_text(filters\cf4 , \cf6 'location'\cf4 , \cf6 'id'\cf4 , true\cf2 ) \cf4 , \cf6 '[' \cf4 , \cf6 ''\cf2 ) \cf4 , \cf6 ']' \cf4 , \cf6 ''\cf2 )   \cf4 AS \cf2 location_type\cf4 ,\
+   replace\cf2 (\cf4 replace\cf2 (json_extract_path_text(filters\cf4 , \cf6 'location'\cf4 , \cf6 'lat'\cf4 , true\cf2 ) \cf4 , \cf6 '[' \cf4 , \cf6 ''\cf2 ) \cf4 , \cf6 ']' \cf4 , \cf6 ''\cf2 )   \cf4 AS \cf2 location_lat\cf4 ,\
+   replace\cf2 (\cf4 replace\cf2 (json_extract_path_text(filters\cf4 , \cf6 'location'\cf4 , \cf6 'lon'\cf4 , true\cf2 ) \cf4 , \cf6 '[' \cf4 , \cf6 ''\cf2 ) \cf4 , \cf6 ']' \cf4 , \cf6 ''\cf2 )   \cf4 AS \cf2 location_long\cf4 ,\
+   \cf2 filters\cf4 ,\
+   h\cf2 .session_long\cf4 ,\
+   h\cf2 .date_event_nk\cf4 ,\
+   \cf2 resultset_id\cf4 ,\
+   \cf2 origin_nk\
+\cf4 FROM \cf2 ods.panameraolx_asia_hydra_ninja_android_last_month \cf4 h\
+WHERE \cf2 country_sk = \cf6 'olx|asia|in'\
+\cf4 AND \cf2 trackevent = \cf6 'listings_results'\
+\cf4 and \cf2 date_event_nk = \cf6 '2019-10-27'\
+\cf4 group by \cf7 1\cf4 ,\cf7 2\cf4 ,\cf7 3\cf4 ,\cf7 4\cf4 ,\cf7 5\cf4 ,\cf7 6\cf4 ,\cf7 7\cf4 ,\cf7 8\
+\cf4 limit \cf7 100\
+\
+\cf4 select\
+ left\cf2 (params_lat \cf4 , \cf7 9\cf2 ) \cf4 as \cf2 params_lat\cf4 ,\
+ left\cf2 (params_long \cf4 , \cf7 9\cf2 ) \cf4 as \cf2 params_long \cf4 ,\
+ count\cf2 (\cf4 distinct \cf2 params_resultset_id) \cf4 as \cf2 busquedas\
+\cf4 from \cf2 spectrum.hydra_p_olx_android\
+\cf4 where\
+    \cf2 params_en = \cf6 'listings_results'\
+\cf4 and year \cf2 = \cf7 2019 \cf4 and month\cf2 =\cf7 10 \cf4 and day\cf2 =\cf7 10 \cf4 and \cf2 params_cc = \cf6 'in'\
+\cf4 group by \cf7 1\cf4 ,\cf7 2\
+\cf4 order by \cf7 3 \cf4 desc\
+\
+select \cf2 * \cf4 from \cf2 ods.dim_geographies \cf4 where \cf2 country_sk=\cf6 'olx|asia|in' \cf4 and \cf2 geography_sk \cf4 like \cf6 '%4396545%'\
+\
+\cf4 select \cf2 * \cf4 from \cf2 ods.panameraolx_mea_hydra_ninja_android_last_month\
+ \cf4 where \cf2 resultset_id=\cf6 '16da1c519a9x79070492|1570704374226'\
+   \cf4 and \cf2 trackevent=\cf6 'listings_results'\
+\cf4 limit \cf7 100\
+\
+\
+\cf4 select\
+ \cf2 location_type\cf4 ,\
+ count\cf2 (\cf4 distinct \cf2 session_long) \cf4 as \cf2 users\
+\cf4 from \cf2 ods.panameraolx_asia_hydra_ninja_android_last_month\
+ \cf4 where \cf2 trackevent=\cf6 'location_complete'\
+   \cf4 and \cf2 select_from = \cf6 'posting'\
+   \cf4 and \cf2 country_sk=\cf6 'olx|asia|in'\
+\cf4 group by \cf7 1\
+\
+\cf9 --- Android\
+\
+\cf4 WITH \cf2 verified \cf4 AS \cf2 (\
+    \cf4 SELECT session\
+from \cf2 ods.panameraolx_asia_hydra_ninja_android_last_month\
+\cf4 WHERE \cf2 trackevent \cf4 in \cf2 (\cf6 'posting_tap_post'\cf2 ) \cf4 and \cf2 country_sk=\cf6 'olx|asia|in' \cf4 and \cf2 date_event_nk=\cf6 '2019-10-10'\
+\cf2 )\
+\cf4 SELECT\
+  \cf2 location_type\cf4 ,\
+  COUNT\cf2 (\cf4 DISTINCT CASE WHEN \cf2 trackevent \cf4 in \cf2 (\cf6 'posting_tap_post'\cf2 ) \cf4 THEN \cf2 session_long \cf4 ELSE NULL END\cf2 ) \cf4 AS \cf2 posting_tap_post\cf4 ,\
+  COUNT\cf2 (\cf4 DISTINCT CASE WHEN \cf2 trackevent = \cf6 'location_complete' \cf4 THEN \cf2 session_long \cf4 ELSE NULL END\cf2 ) \cf4 AS \cf2 location_complete\
+\cf4 FROM \cf2 ods.panameraolx_asia_hydra_ninja_android_last_month \cf4 h\
+INNER JOIN \cf2 verified t \cf4 ON h\cf2 .session=t.session\
+  \cf4 where \cf2 country_sk=\cf6 'olx|asia|in'\
+ \cf4 group by \cf7 1\
+\
+\cf9 -- Desktop\
+\cf4 WITH \cf2 verified \cf4 AS \cf2 (\
+    \cf4 SELECT session\
+from \cf2 ods.panameraolx_asia_hydra_ninja_web_last_month\
+\cf4 WHERE \cf2 trackevent \cf4 in \cf2 (\cf6 'posting_tap_post'\cf2 ) \cf4 and \cf2 country_sk=\cf6 'olx|asia|in' \cf4 and \cf2 date_event_nk=\cf6 '2019-10-10'\
+\cf2 )\
+\cf4 SELECT\
+  \cf2 location_type\cf4 ,\
+  COUNT\cf2 (\cf4 DISTINCT CASE WHEN \cf2 trackevent \cf4 in \cf2 (\cf6 'posting_tap_post'\cf2 ) \cf4 THEN \cf2 session_long \cf4 ELSE NULL END\cf2 ) \cf4 AS \cf2 posting_tap_post\cf4 ,\
+  COUNT\cf2 (\cf4 DISTINCT CASE WHEN \cf2 trackevent = \cf6 'location_complete' \cf4 THEN \cf2 session_long \cf4 ELSE NULL END\cf2 ) \cf4 AS \cf2 location_complete\
+\cf4 FROM \cf2 ods.panameraolx_asia_hydra_ninja_web_last_month \cf4 h\
+INNER JOIN \cf2 verified t \cf4 ON h\cf2 .session=t.session\
+  \cf4 where \cf2 country_sk=\cf6 'olx|asia|in' \cf4 and \cf2 date_event_nk=\cf6 '2019-10-10'\
+ \cf4 group by \cf7 1\
+\
+\cf4 select \cf2 * \cf4 from \cf2 ods.dim_geographies\
+\cf4 where \cf2 geography_latitude \cf4 like \cf6 '%28.67%'\
+  \cf4 and \cf2 country_sk=\cf6 'olx|asia|in'\
+\
+\
+\cf4 drop table if exists \cf2 location_complete\cf4 ;\
+select\
+ \cf2 place_selected_id\cf4 ,\
+ count\cf2 (\cf4 distinct \cf2 session_long) \cf4 as \cf2 users\
+  \cf4 into temp table \cf2 location_complete\
+\cf4 from \cf2 ods.panameraolx_asia_hydra_ninja_android_last_month\
+ \cf4 where \cf2 trackevent=\cf6 'tree_location_complete'\
+   \cf4 and \cf2 select_from = \cf6 'posting'\
+   \cf4 and \cf2 country_sk=\cf6 'olx|asia|in'\
+\cf4 group by \cf7 1\
+\
+\cf4 drop table if exists \cf2 location_tree\cf4 ;\
+select\
+ \cf2 a.*\cf4 ,\
+ \cf2 b.geography_latitude\cf4 ,\
+ \cf2 b.geography_longitude\
+\cf4 from \cf2 location_complete a\
+ \cf4 left join \cf2 ods.dim_geographies b \cf4 on \cf2 a.place_selected_id=b.geography_nk\
+\
+\
+\
+\
+\cf4 select \cf2 * \cf4 from \cf2 livesync.panamera_ads\
+ \cf4 where \cf2 id=\cf6 '1543864847'\
+\cf4 limit \cf7 100\
+\
+\
+\
+\
+\cf9 ---------------------------------------------------------------------------------------------------------\
+-------------------------	Query of listings by lat-lon 	(original)---------------------------------\
+---------------------------------------------------------------------------------------------------------\
+\
+\cf4 WITH \cf2 web_users \cf4 as \cf2 (\
+\cf4 SELECT \cf2 user_sk\cf4 , \cf2 user_nk\cf4 , \cf2 listing_sk\cf4 , \cf2 listing_nk\cf4 , \cf2 session_long\cf4 , \cf2 date_event_nk\cf4 , \cf2 channel_sk\cf4 , \cf2 channel_nk\cf4 , \cf2 trackevent\
+\cf4 FROM \cf2 ods.panameraolx_mea_hydra_ninja_web_last_6_months\
+\cf4 WHERE \cf2 trackevent = \cf6 'posting_successful_post'\
+\cf4 AND \cf2 country_nk = \cf6 'za'\
+\cf4 AND \cf2 date_event_nk \cf4 BETWEEN \cf6 '2018-10-01' \cf4 AND \cf6 '2018-10-01'\
+\cf2 )\cf4 ,\
+\cf2 ios_users \cf4 as \cf2 (\
+\cf4 SELECT \cf2 user_sk\cf4 , \cf2 user_nk\cf4 , \cf2 listing_sk\cf4 , \cf2 listing_nk\cf4 , \cf2 session_long\cf4 , \cf2 date_event_nk\cf4 , \cf2 channel_sk\cf4 , \cf2 channel_nk\cf4 , \cf2 trackevent\
+\cf4 FROM \cf2 ods.panameraolx_mea_hydra_ninja_ios_last_6_months\
+\cf4 WHERE \cf2 trackevent = \cf6 'posting_successful_post'\
+\cf4 AND \cf2 country_nk = \cf6 'za'\
+\cf4 AND \cf2 date_event_nk \cf4 BETWEEN \cf6 '2018-10-01' \cf4 AND \cf6 '2018-10-01'\
+\cf2 )\cf4 ,\
+\cf2 android_users \cf4 as \cf2 (\
+\cf4 SELECT \cf2 user_sk\cf4 , \cf2 user_nk\cf4 , \cf2 listing_sk\cf4 , \cf2 listing_nk\cf4 , \cf2 session_long\cf4 , \cf2 date_event_nk\cf4 , \cf2 channel_sk\cf4 , \cf2 channel_nk\cf4 , \cf2 trackevent\
+\cf4 FROM \cf2 ods.panameraolx_mea_hydra_ninja_android_last_6_months\
+\cf4 WHERE \cf2 trackevent = \cf6 'posting_successful_post'\
+\cf4 AND \cf2 country_nk = \cf6 'za'\
+\cf4 AND \cf2 date_event_nk \cf4 BETWEEN \cf6 '2018-10-01' \cf4 AND \cf6 '2018-10-01'\
+\cf2 )\
+\cf4 SELECT\
+   \cf2 fl.user_sk\
+  \cf4 ,\cf2 fl.listing_sk\
+  \cf9 -- ,CASE WHEN wlm.channel_sk='posting_succesful_post' THEN 'web|mobile_web' ELSE NULL END as channel_web\
+  -- ,CASE WHEN ilm.channel_sk='posting_succesful_post' THEN 'android' ELSE NULL END as channel_android\
+  -- ,CASE WHEN alm.channel_sk='posting_succesful_post' THEN 'ios' ELSE NULL END as channel_ios\
+  \cf4 ,\cf2 fl.channel_sk           \cf4 AS \cf2 channel_listing\
+  \cf4 ,\cf2 fl.date_posted_nk       \cf4 AS \cf2 date_posted\
+  \cf4 ,\cf2 fl.country_sk           \cf4 AS \cf2 country\
+  \cf4 ,c\cf2 .category_l2_name_en   \cf4 AS \cf2 category\
+  \cf4 ,\cf2 g.geography_name_en     \cf4 AS \cf2 city\
+  \cf9 -- ,fl.listing_status_sk    AS current_status\
+  \cf4 ,\cf2 fl.listing_type_sk      \cf4 AS \cf2 type\
+  \cf4 ,\cf2 fl.listing_price        \cf4 AS \cf2 price\
+  \cf4 ,\cf2 fl.listing_num_images   \cf4 AS \cf2 number_images\
+  \cf4 ,\cf2 fl.listing_latitude     \cf4 AS \cf2 lat\
+  \cf4 ,\cf2 fl.listing_longitude    \cf4 AS \cf2 lon\
+  \cf4 ,\cf2 we.channel_sk 		   \cf4 AS \cf2 web\
+  \cf4 ,\cf2 an.channel_sk 		   \cf4 AS \cf2 android\
+  \cf4 ,\cf2 io.channel_sk  		   \cf4 AS \cf2 ios\
+\
+\
+\cf4 FROM \cf2 ods.fact_listings fl\
+\
+  \cf4 JOIN \cf2 ods.dim_categories \cf4 c\
+    ON \cf2 fl.category_sk = \cf4 c\cf2 .category_sk\
+\
+  \cf4 JOIN \cf2 ods.dim_geographies g\
+    \cf4 ON \cf2 fl.geography_sk = g.geography_sk\
+\
+  \cf4 LEFT JOIN \cf2 web_users we\
+    \cf4 ON  \cf2 we.listing_sk = fl.listing_sk\
+\
+  \cf4 LEFT JOIN \cf2 android_users an\
+    \cf4 ON \cf2 an.listing_sk = fl.listing_sk\
+\
+  \cf4 LEFT JOIN \cf2 ios_users io\
+    \cf4 ON \cf2 io.listing_sk = fl.listing_sk\
+\
+\
+\cf4 WHERE c\cf2 .country_sk = \cf6 'olx|mea|za'\
+\cf4 AND \cf2 fl.date_posted_nk \cf4 BETWEEN \cf6 '2018-10-01' \cf4 AND \cf6 '2018-10-07'\cf4 ;\
+\
+\
+\
+select \cf2 * \cf4 from \cf2 ods.fact_listings\
+\cf4 where \cf2 country_sk=\cf6 'olx|asia|in'\
+ \cf4 and \cf2 date_posted_nk = \cf6 '2019-10-25'\
+\cf4 limit \cf7 100\
+\
+\
+\
+\cf4 drop table if exists \cf2 app_version_with_bundles\cf4 ;\
+select\
+ \cf2 params_v\
+ \cf4 into temp table \cf2 app_version_with_bundles\
+  \cf4 from \cf2 spectrum.hydra_p_olx_android\
+\cf4 where \cf2 params_resultset_type \cf4 like \cf6 '%BUNDLE%'\
+  \cf4 and \cf2 params_cc \cf4 like \cf6 '%za%'\
+\cf4 group by \cf7 1\
+\
+\cf4 ;drop table if exists \cf2 dau\cf4 ;\
+select\
+ year \cf2 || \cf6 '-' \cf2 || \cf4 month \cf2 || \cf6 '-' \cf2 || \cf4 day as \cf2 date\cf4 ,\
+ count\cf2 (\cf4 distinct \cf2 meta_session_long) \cf4 as \cf2 dau\
+  \cf4 into temp table \cf2 dau\
+    \cf4 from \cf2 spectrum.hydra_p_olx_android a\
+      \cf4 join \cf2 app_version_with_bundles b \cf4 on \cf2 a.params_v=b.params_v\
+ \cf4 where \cf2 ((params_en \cf4 NOT IN \cf2 (\cf6 'app_open'\cf4 , \cf6 'on_create'\cf4 , \cf6 'apps'\cf4 , \cf6 'push_dis'\cf4 ,\cf6 'pushDis'\cf4 , \cf6 'push_rcv'\cf4 , \cf6 'pushRcv'\cf4 , \cf6 'UAReg'\cf4 , \cf6 'ua_reg'\cf4 , \cf6 'uareg'\cf4 ,\cf6 'push_dismissed'\cf4 , \cf6 'push_show'\cf4 , \cf6 'fetching_matrix'\cf4 , \cf6 'not_found'\cf4 ,\cf6 'permissions_impression'\cf4 ,\cf6 'userBadgeCount'\cf4 ,\cf6 'test_assignment'\cf4 ,\cf6 'test_impression'\cf4 ,\cf6 'test_discovered'\cf4 ,\cf6 'FCMReg'\cf4 ,\cf6 'APNSReg'\cf4 ,\cf6 'appOpn'\cf4 ,\cf6 'appOpen'\cf4 ,\cf6 'google_play_services'\cf4 ,\cf6 'fetchTestDefinitionsError'\cf4 ,\cf6 'messages_scheduler_ended'\cf4 ,\cf6 'messages_scheduler_started'\cf4 ,\cf6 'chat_auth_fail'\cf4 ,\cf6 'item_chat_multi_delete'\cf2 ) \cf4 AND \cf2 params_en \cf4 IS NOT NULL AND \cf2 params_en \cf4 NOT LIKE \cf6 'b2c%'\cf2 ))\
+ \cf4 and year\cf2 =\cf7 2019\
+ \cf4 and month in \cf2 (\cf7 10\cf4 ,\cf7 11\cf2 )\
+ \cf4 and \cf2 params_cc \cf4 like \cf6 '%za%'\
+\cf4 group by \cf7 1\
+\
+\cf4 ;drop table if exists \cf2 users_with_bund\cf4 ;\
+select\
+ year \cf2 || \cf6 '-' \cf2 || \cf4 month \cf2 || \cf6 '-' \cf2 || \cf4 day as \cf2 date\cf4 ,\
+ count\cf2 (\cf4 distinct \cf2 meta_session_long) \cf4 as \cf2 user_with_bundle\
+  \cf4 into temp table \cf2 users_with_bund\
+    \cf4 from \cf2 spectrum.hydra_p_olx_android a\
+  \cf4 join \cf2 app_version_with_bundles b \cf4 on \cf2 a.params_v=b.params_v\
+ \cf4 where \cf2 params_resultset_type \cf4 like \cf6 '%BUNDLE%'\
+  \cf4 and year\cf2 =\cf7 2019\
+ \cf4 and month in \cf2 (\cf7 10\cf4 ,\cf7 11\cf2 )\
+ \cf4 and \cf2 params_cc \cf4 like \cf6 '%za%'\
+\cf4 group by \cf7 1\cf4 ;\
+\
+select\
+ \cf2 a.*\cf4 ,\
+ \cf2 b.user_with_bundle\
+    \cf4 from \cf2 dau a\
+ \cf4 left join \cf2 users_with_bund b \cf4 on \cf2 a.date=b.date\
+\cf4 order by \cf2 date\
+\
+\cf9 ------------------------------------------------------------------------\
+------------------------\
+\
+\cf4 drop table if exists \cf2 app_version_with_bundles\cf4 ;\
+select\
+ \cf2 params_v\
+ \cf4 into temp table \cf2 app_version_with_bundles\
+  \cf4 from \cf2 spectrum.hydra_p_olx_android\
+\cf4 where \cf2 params_resultset_type \cf4 like \cf6 '%BUNDLE%'\
+  \cf4 and \cf2 params_cc \cf4 like \cf6 '%in%'\
+  \cf4 and year\cf2 =\cf7 2019\
+  \cf4 and month in \cf2 (\cf7 10\cf4 ,\cf7 11\cf2 )\
+\cf4 group by \cf7 1\
+\
+\cf4 select\
+ \cf2 params_resultset_type\cf4 ,\
+ count\cf2 (\cf4 distinct \cf2 meta_session_long)\
+\cf4 from \cf2 spectrum.hydra_p_olx_android\
+\cf4 where\
+  \cf2 params_cc \cf4 like \cf6 '%in%'\
+  \cf4 and year\cf2 =\cf7 2019\
+  \cf4 and month in \cf2 (\cf7 11\cf2 )\
+  \cf4 and day\cf2 =\cf7 4\
+  \cf4 and hour\cf2 =\cf7 10\
+  \cf4 and \cf2 params_en = \cf6 'view_listings'\
+\cf4 group by \cf7 1\
+\
+\cf4 SELECT \cf2 to_date(\cf4 TIMESTAMP \cf6 'epoch' \cf2 + meta_date::\cf4 int \cf2 * \cf4 INTERVAL \cf6 '1 second'\cf4 ,\cf6 'YYYY-MM-DD'\cf2 ) \cf4 from \cf2 spectrum.hydra_p_olx_android\
+\cf4 where\
+  \cf2 params_cc \cf4 like \cf6 '%in%'\
+  \cf4 and year\cf2 =\cf7 2019\
+  \cf4 and month in \cf2 (\cf7 11\cf2 )\
+  \cf4 and day\cf2 =\cf7 4\
+  \cf4 and hour\cf2 =\cf7 10\
+  \cf4 and \cf2 params_en = \cf6 'view_listings'\
+\cf4 limit \cf7 100\
+\
+\cf4 select \cf2 trackevent\cf4 ,\cf2 resultset_type\cf4 ,\cf2 origin_nk \cf4 from \cf2 ods.panameraolx_asia_hydra_ninja_android_last_month\
+ \cf4 where \cf2 country_sk=\cf6 'olx|asia|in'\
+  \cf4 and \cf2 date_event_nk = \cf6 '2019-11-04'\
+  \cf4 and \cf2 trackevent = \cf6 'view_listings'\
+\cf4 group by \cf7 1\cf4 ,\cf7 2\cf4 ,\cf7 3\
+\
+\
+\cf4 select \cf2 * \cf4 from \cf2 app_version_with_bundles \cf4 limit \cf7 100\
+\
+    \cf4 select case when day between \cf7 1 \cf4 and \cf7 9 \cf4 then year\cf2 ||\cf6 '-'\cf2 ||\cf6 '0'\cf2 ||\cf4 month\cf2 ||\cf6 '-'\cf2 ||\cf6 '0'\cf2 ||\cf4 day\
+                       when day\cf2 >\cf7 9 \cf4 then year\cf2 ||\cf6 '-'\cf2 ||\cf6 '0'\cf2 ||\cf4 month\cf2 ||\cf6 '-'\cf2 ||\cf4 day end as \cf2 date_event_nk\
+     \cf4 from \cf2 spectrum.hydra_p_olx_android\
+     \cf4 where \cf2 params_cc \cf4 like \cf6 '%in%'\
+       \cf4 and \cf2 params_en = \cf6 'test_impression'\
+       \cf4 and year\cf2 =\cf7 2019 \cf4 and month\cf2 =\cf7 10 \cf4 and day\cf2 =\cf7 5 \cf4 and hour\cf2 =\cf7 10\
+    \cf4 limit \cf7 100\
+\
+\cf4 select \cf2 *  \cf4 from \cf2 spectrum.hydra_p_olx_android\
+     \cf4 where \cf2 params_cc \cf4 like \cf6 '%in%'\
+       \cf4 and \cf2 params_en = \cf6 'app_open'\
+       \cf4 and year\cf2 =\cf7 2019 \cf4 and month\cf2 =\cf7 10 \cf4 and day\cf2 =\cf7 5 \cf4 and hour\cf2 =\cf7 10\
+\cf4 limit \cf7 100\
+\
+\cf9 ------------------------------------------------------------------------\
+----------------------- BUNDLES EXPERIMENT ---------\
+\
+\cf4 drop table if exists \cf2 tabla1\cf4 ;\
+      select  \cf2 meta_session_long\cf4 ,\
+              \cf2 params_test_name\cf4 ,\
+              \cf2 params_test_variation \cf4 as \cf2 variation\cf4 ,\
+              min\cf2 (to_date(\cf4 TIMESTAMP \cf6 'epoch' \cf2 + meta_date::\cf4 int \cf2 * \cf4 INTERVAL \cf6 '1 second'\cf4 ,\cf6 'YYYY-MM-DD'\cf2 )) \cf4 as \cf2 first_exposition\
+       \cf4 into temp table \cf2 tabla1\
+      \cf4 from \cf2 spectrum.hydra_p_olx_android\
+      \cf4 where \cf2 params_cc \cf4 like \cf6 '%in%'\
+      \cf4 and \cf2 params_en=\cf6 'test_impression'\
+      \cf4 and \cf2 params_test_name \cf4 like \cf6 'pan-30229'\
+      \cf4 and \cf2 params_test_variation \cf4 is not null\
+      group by \cf7 1\cf4 ,\cf7 2\cf4 ,\cf7 3\
+\
+\
+\cf4 drop table if exists \cf2 tabla2\cf4 ;\
+select  \cf2 a.meta_session_long\cf4 ,\
+       \cf2 a.params_test_name\cf4 ,\
+       \cf2 a.variation\cf4 ,\
+       \cf2 a.first_exposition \cf4 ,\
+       \cf2 b.date_event_nk \cf4 ,\
+       \cf2 b.params_test_variation\cf4 ,\
+       count\cf2 (\cf4 distinct case when \cf2 b.params_test_variation \cf4 is not null then \cf2 b.meta_session_long\
+               \cf4 else null end\cf2 ) \cf4 as \cf2 count_dups\
+    \cf4 into temp \cf2 tabla2\
+ \cf4 from \cf2 tabla1 \cf4 as \cf2 a\
+\cf4 left join\
+       \cf2 (\cf4 select \cf2 meta_session_long\cf4 ,\cf2 to_date(\cf4 TIMESTAMP \cf6 'epoch' \cf2 + meta_date::\cf4 int \cf2 * \cf4 INTERVAL \cf6 '1 second'\cf4 ,\cf6 'YYYY-MM-DD'\cf2 ) \cf4 as \cf2 date_event_nk\cf4 ,\cf2 params_test_variation\
+       \cf4 from \cf2 spectrum.hydra_p_olx_android\
+       \cf4 where \cf2 params_cc \cf4 like \cf6 '%in%'\
+      \cf4 and \cf2 params_en=\cf6 'test_impression'\
+      \cf4 and \cf2 params_test_name \cf4 like \cf6 'pan-31472'\
+      \cf4 and \cf2 params_test_variation \cf4 is not null\cf2 ) \cf4 as \cf2 b\
+\cf4 on \cf2 a.meta_session_long=b.meta_session_long \cf4 and \cf2 b.date_event_nk>=first_exposition \cf4 and \cf2 a.variation != b.params_test_variation\
+\cf4 group by \cf7 1\cf4 ,\cf7 2\cf4 ,\cf7 3\cf4 ,\cf7 4\cf4 ,\cf7 5\cf4 ,\cf7 6\
+\
+\cf4 drop table if exists \cf2 no_duplicates\cf4 ;\
+select\
+\cf2 *\
+ \cf4 into temp table \cf2 no_duplicates\
+\cf4 from \cf2 tabla2\
+\cf4 where \cf2 count_dups=\cf7 0\
+\
+\cf4 drop table if exists \cf2 dau\
+\cf4 select\
+ \cf2 session_long\cf4 ,\
+ \cf2 date_event_nk\cf4 ,\
+ \cf2 b.first_exposition\cf4 ,\
+ \cf2 b.variation\
+   \cf4 into temp table \cf2 dau\
+  \cf4 from \cf2 ods.panameraolx_asia_hydra_ninja_android_last_month a\
+   \cf4 join \cf2 (\cf4 select \cf2 meta_session_long\cf4 , \cf2 first_exposition\cf4 ,\cf2 variation \cf4 from \cf2 no_duplicates \cf4 group by \cf7 1\cf4 ,\cf7 2\cf4 ,\cf7 3\cf2 ) b \cf4 on \cf2 a.session_long=b.meta_session_long \cf4 and \cf2 a.date_event_nk>b.first_exposition\
+\cf4 where\
+    \cf2 country_sk=\cf6 'olx|asia|in'\
+ \cf4 and \cf2 ((trackevent \cf4 NOT IN \cf2 (\cf6 'app_open'\cf4 , \cf6 'on_create'\cf4 , \cf6 'apps'\cf4 , \cf6 'push_dis'\cf4 ,\cf6 'pushDis'\cf4 , \cf6 'push_rcv'\cf4 , \cf6 'pushRcv'\cf4 , \cf6 'UAReg'\cf4 , \cf6 'ua_reg'\cf4 , \cf6 'uareg'\cf4 ,\cf6 'push_dismissed'\cf4 , \cf6 'push_show'\cf4 , \cf6 'fetching_matrix'\cf4 , \cf6 'not_found'\cf4 ,\cf6 'permissions_impression'\cf4 ,\cf6 'userBadgeCount'\cf4 ,\cf6 'test_assignment'\cf4 ,\cf6 'test_impression'\cf4 ,\cf6 'test_discovered'\cf4 ,\cf6 'FCMReg'\cf4 ,\cf6 'APNSReg'\cf4 ,\cf6 'appOpn'\cf4 ,\cf6 'appOpen'\cf4 ,\cf6 'google_play_services'\cf4 ,\cf6 'fetchTestDefinitionsError'\cf4 ,\cf6 'messages_scheduler_ended'\cf4 ,\cf6 'messages_scheduler_started'\cf4 ,\cf6 'chat_auth_fail'\cf4 ,\cf6 'item_chat_multi_delete'\cf2 ) \cf4 AND \cf2 trackevent \cf4 IS NOT NULL AND \cf2 trackevent \cf4 NOT LIKE \cf6 'b2c%'\cf2 ))\
+\cf4 group by \cf7 1\cf4 ,\cf7 2\cf4 ,\cf7 3\cf4 ,\cf7 4\
+\
+\cf4 drop table if exists \cf2 dub\
+\cf4 select\
+ \cf2 session_long\cf4 ,\
+ \cf2 date_event_nk\
+   \cf4 into temp table \cf2 dub\
+  \cf4 from \cf2 ods.panameraolx_asia_hydra_ninja_android_last_month a\
+   \cf4 join \cf2 (\cf4 select \cf2 meta_session_long\cf4 , \cf2 first_exposition\cf4 ,\cf2 variation \cf4 from \cf2 no_duplicates \cf4 group by \cf7 1\cf4 ,\cf7 2\cf4 ,\cf7 3\cf2 ) b \cf4 on \cf2 a.session_long=b.meta_session_long \cf4 and \cf2 a.date_event_nk>b.first_exposition\
+\cf4 where\
+    \cf2 country_sk=\cf6 'olx|asia|in'\
+ \cf4 and \cf2 trackevent \cf4 in \cf2 (\cf6 'item_tap_call' \cf4 , \cf6 'item_chat_tap_send_1st_reply' \cf4 , \cf6 'item_tap_sms' \cf4 , \cf6 'item_chat_tap_sms'\cf2 )\
+\cf4 group by \cf7 1\cf4 ,\cf7 2\
+\
+\cf4 drop table if exists \cf2 dau_dub\cf4 ;\
+select\
+  \cf2 a.*\cf4 ,\
+  case when \cf2 b.date_event_nk \cf4 is not null then \cf7 1 \cf4 else \cf7 0 \cf4 end as \cf2 dub\
+   \cf4 into temp table \cf2 dau_dub\
+ \cf4 from \cf2 dau a\
+  \cf4 left join \cf2 dub b \cf4 on \cf2 a.session_long=b.session_long \cf4 and \cf2 a.date_event_nk=b.date_event_nk\
+\
+\cf4 select\
+ \cf2 date_event_nk\cf4 ,\
+ \cf2 variation\cf4 ,\
+ count\cf2 (\cf4 distinct \cf2 session_long) \cf4 as \cf2 dau\cf4 ,\
+ \cf2 sum(dub) \cf4 as \cf2 dub\
+\cf4 from \cf2 dau_dub\
+\cf4 group by \cf7 1\cf4 ,\cf7 2\
+\
+\cf4 select\
+\
+\
+\
+\
+select\
+ \cf2 params_v\
+\cf4 from \cf2 spectrum.hydra_p_olx_android\
+ \cf4 where \cf2 params_cc \cf4 like \cf6 '%in%'\
+\cf4 and \cf2 params_resultset_type \cf4 like \cf6 '%BUNDLE%'\
+\cf4 group by \cf7 1\
+\
+\cf4 select\
+ \cf2 params_v\
+\cf4 from \cf2 spectrum.hydra_p_olx_android\
+ \cf4 where \cf2 params_cc \cf4 like \cf6 '%in%'\
+\cf4 and \cf2 params_en = \cf6 'location_show'\
+\cf4 group by \cf7 1\
+\
+\
+\cf4 select\
+  \cf2 origin_nk\cf4 ,\
+  \cf2 resultset_type\cf4 ,\
+  \cf2 select_from\cf4 ,\
+  count\cf2 (\cf4 distinct \cf2 session_long)\
+\cf4 from \cf2 ods.panameraolx_asia_hydra_ninja_android_last_month\
+\cf4 where \cf2 trackevent=\cf6 'view_listings'\
+\cf4 group by \cf7 1\cf4 ,\cf7 2\cf4 ,\cf7 3\
+\
+\
+\
+\
+\
+\cf4 DROP TABLE IF EXISTS \cf2 SESSIONS\cf4 ;\
+    SELECT session\
+     INTO TEMP TABLE \cf2 SESSIONS\
+\cf4 from \cf2 ods.panameraolx_asia_hydra_ninja_android_last_month\
+\cf4 WHERE \cf2 trackevent = \cf6 'location_show' \cf4 and \cf2 flow_step=\cf6 'permissions' \cf4 and \cf2 country_sk=\cf6 'olx|asia|in'\
+\cf4 group by \cf7 1\
+\
+\cf4 DROP TABLE IF EXISTS \cf2 third_step\cf4 ;\
+SELECT\
+  COUNT\cf2 (\cf4 DISTINCT CASE WHEN \cf2 trackevent = \cf6 'location_show' \cf4 and \cf2 flow_step=\cf6 'permissions' \cf4 THEN \cf2 session_long \cf4 ELSE NULL END\cf2 ) \cf4 AS \cf2 permission_show\cf4 ,\
+  COUNT\cf2 (\cf4 DISTINCT CASE WHEN \cf2 ((trackevent = \cf6 'location_show'  \cf4 and \cf2 flow_step=\cf6 'permissions' \cf4 and \cf2 chosen_option=\cf6 'yes'\cf2 ) \cf4 or \cf2 (trackevent = \cf6 'location_show' \cf4 and \cf2 flow_step=\cf6 'gps'\cf2 )) \cf4 THEN \cf2 session_long \cf4 ELSE NULL END\cf2 ) \cf4 AS yes,\
+  COUNT\cf2 (\cf4 DISTINCT CASE WHEN \cf2 (trackevent = \cf6 'location_show'  \cf4 and \cf2 flow_step=\cf6 'permissions' \cf4 and \cf2 chosen_option=\cf6 'yes'\cf2 ) \cf4 THEN \cf2 session_long \cf4 ELSE NULL END\cf2 ) \cf4 AS \cf2 yes_1\cf4 ,\
+  COUNT\cf2 (\cf4 DISTINCT CASE WHEN \cf2 (trackevent = \cf6 'location_show' \cf4 and \cf2 flow_step=\cf6 'gps'\cf2 ) \cf4 THEN \cf2 session_long \cf4 ELSE NULL END\cf2 ) \cf4 AS \cf2 yes_2\cf4 ,\
+  COUNT\cf2 (\cf4 DISTINCT CASE WHEN \cf2 trackevent = \cf6 'location_action' \cf4 and \cf2 flow_step=\cf6 'permissions' \cf4 and \cf2 chosen_option=\cf6 'no' \cf4 THEN \cf2 session_long \cf4 ELSE NULL END\cf2 ) \cf4 AS no\
+INTO TEMP TABLE \cf2 third_step\
+\cf4 FROM \cf2 ods.panameraolx_asia_hydra_ninja_android_last_month\
+\cf4 JOIN \cf2 SESSIONS \cf4 USING \cf2 (\cf4 session\cf2 )\
+    \cf4 where \cf2 country_sk=\cf6 'olx|asia|in'\
+\cf4 ;\
+\
+select \cf2 * \cf4 from \cf2 third_step \cf4 limit \cf7 100\
+\
+\
+\
+\cf4 select \cf2 * \cf4 from \cf2 spectrum.hydra_p_olx_web\
+\cf4 where year\cf2 =\cf7 2019 \cf4 and month\cf2 =\cf7 10 \cf4 and day\cf2 =\cf7 10 \cf4 and hour\cf2 =\cf7 5 \cf4 and \cf2 params_cc=\cf6 'in'\
+\
+\cf4 limit \cf7 100\
+\
+\
+\cf4 select \cf2 * \cf4 from\
+\
+\
+\cf9 --- Punta a punta\
+\cf4 DROP TABLE IF EXISTS \cf2 SESSIONS\cf4 ;\
+    SELECT session\
+     INTO TEMP TABLE \cf2 SESSIONS\
+\cf4 from \cf2 ods.panameraolx_asia_hydra_ninja_android_last_month\
+\cf4 WHERE \cf2 trackevent = \cf6 'location_action' \cf4 and \cf2 flow_step=\cf6 'gps' \cf4 and \cf2 chosen_option=\cf6 'yes' \cf4 and \cf2 country_sk=\cf6 'olx|asia|in'\
+\cf4 group by \cf7 1\
+\
+\
+\cf4 DROP TABLE IF EXISTS \cf2 third_step\cf4 ;\
+SELECT\
+  COUNT\cf2 (\cf4 DISTINCT CASE WHEN \cf2 trackevent = \cf6 'location_action' \cf4 and \cf2 flow_step=\cf6 'gps' \cf4 and \cf2 chosen_option=\cf6 'yes' \cf4 THEN \cf2 session_long \cf4 ELSE NULL END\cf2 ) \cf4 AS \cf2 location_show\cf4 ,\
+  COUNT\cf2 (\cf4 DISTINCT CASE WHEN \cf2 trackevent = \cf6 'view_listings' \cf4 THEN \cf2 session_long \cf4 ELSE NULL END\cf2 ) \cf4 AS \cf2 view_listings\
+\cf4 INTO TEMP TABLE \cf2 third_step\
+\cf4 FROM \cf2 ods.panameraolx_asia_hydra_ninja_android_last_month\
+\cf4 JOIN \cf2 SESSIONS \cf4 USING \cf2 (\cf4 session\cf2 )\
+    \cf4 where \cf2 country_sk=\cf6 'olx|asia|in'\
+\cf4 ;\
+\
+select \cf2 * \cf4 from \cf2 third_step \cf4 limit \cf7 100\
+\
+\cf4 select \cf2 * \cf4 from \cf2 ods.panameraolx_asia_hydra_ninja_android_last_month\
+\cf4 where \cf2 trackevent=\cf6 'location_complete'\
+\cf4 limit \cf7 100\
+\
+\cf9 --- India searches\
+\cf4 DROP TABLE IF EXISTS \cf2 SESSIONS\cf4 ;\
+    SELECT session\
+     INTO TEMP TABLE \cf2 SESSIONS\
+\cf4 from \cf2 ods.panameraolx_asia_hydra_ninja_android_last_month\
+\cf4 WHERE \cf2 trackevent = \cf6 'location_action' \cf4 and \cf2 flow_step=\cf6 'gps' \cf4 and \cf2 chosen_option=\cf6 'yes' \cf4 and \cf2 country_sk=\cf6 'olx|asia|in'\
+\cf4 group by \cf7 1\
+\
+\
+\cf4 DROP TABLE IF EXISTS \cf2 third_step\cf4 ;\
+SELECT\
+  COUNT\cf2 (\cf4 DISTINCT CASE WHEN \cf2 trackevent = \cf6 'location_action' \cf4 and \cf2 flow_step=\cf6 'gps' \cf4 and \cf2 chosen_option=\cf6 'yes' \cf4 THEN \cf2 session_long \cf4 ELSE NULL END\cf2 ) \cf4 AS \cf2 location_show\cf4 ,\
+  COUNT\cf2 (\cf4 DISTINCT CASE WHEN \cf2 trackevent = \cf6 'view_listings' \cf4 THEN \cf2 session_long \cf4 ELSE NULL END\cf2 ) \cf4 AS \cf2 view_listings\
+\cf4 INTO TEMP TABLE \cf2 third_step\
+\cf4 FROM \cf2 ods.panameraolx_asia_hydra_ninja_android_last_month\
+\cf4 JOIN \cf2 SESSIONS \cf4 USING \cf2 (\cf4 session\cf2 )\
+    \cf4 where \cf2 country_sk=\cf6 'olx|asia|in'\
+\cf4 ;\
+\
+select \cf2 * \cf4 from \cf2 third_step \cf4 limit \cf7 100\
+\
+\
+\
+\cf4 select\
+    \cf2 app_version \cf4 ,\
+    count\cf2 (\cf4 distinct \cf2 session_long)\
+  \cf4 from \cf2 ods.fact_user_hydra_browsing_activity\
+ \cf4 where \cf2 country_sk=\cf6 'olx|asia|in'\
+   \cf4 and \cf2 date_nk = \cf6 '2019-12-15'\
+\cf4 group by \cf7 1\
+\cf4 order by \cf7 2 \cf4 desc\
+\
+\
+\
+\cf9 ---------------------------------------------------------------------------------\
+---------------------------------------------------------------------------------\
+\
+\cf4 drop table if exists \cf2 app_versions_with_bundle\cf4 ;\
+select\
+ \cf2 app_version\
+   \cf4 into temp table \cf2 app_versions_with_bundle\
+  \cf4 from \cf2 ods.panameraolx_asia_hydra_ninja_android_last_month\
+\cf4 where \cf2 trackevent=\cf6 'view_listings' \cf4 and \cf2 resultset_type \cf4 in \cf2 (\cf6 'BUNDLE_LAS' \cf4 , \cf6 'BUNDLE_FAV'\cf2 )\
+   \cf4 and \cf2 country_sk=\cf6 'olx|asia|in'\
+\cf4 group by \cf7 1\
+\
+\cf4 drop table if exists \cf2 app_version_with_no_bundles\cf4 ;\
+select\
+  \cf2 app_version\
+   \cf4 into temp table \cf2 app_version_with_no_bundles\
+  \cf4 from \cf2 ods.panameraolx_asia_hydra_ninja_android_last_month\
+\cf4 where \cf2 app_version \cf4 not in \cf2 (\cf4 select \cf2 app_version \cf4 from \cf2 app_versions_with_bundle)\
+\cf4 group by \cf7 1\
+\
+\cf4 select\
+ \cf2 date_event_nk\cf4 ,\
+ count\cf2 (\cf4 distinct \cf2 session_long) \cf4 as \cf2 dau\
+\cf4 from \cf2 ods.panameraolx_asia_hydra_ninja_android_last_month a\
+   \cf4 join \cf2 app_version_with_no_bundles b \cf4 on \cf2 a.app_version=b.app_version\
+  \cf4 where \cf2 ((trackevent \cf4 NOT IN \cf2 (\cf6 'app_open'\cf4 , \cf6 'on_create'\cf4 , \cf6 'apps'\cf4 , \cf6 'push_dis'\cf4 ,\cf6 'pushDis'\cf4 , \cf6 'push_rcv'\cf4 , \cf6 'pushRcv'\cf4 , \cf6 'UAReg'\cf4 , \cf6 'ua_reg'\cf4 , \cf6 'uareg'\cf4 ,\cf6 'push_dismissed'\cf4 , \cf6 'push_show'\cf4 , \cf6 'fetching_matrix'\cf4 , \cf6 'not_found'\cf4 ,\cf6 'permissions_impression'\cf4 ,\cf6 'userBadgeCount'\cf4 ,\cf6 'test_assignment'\cf4 ,\cf6 'test_impression'\cf4 ,\cf6 'test_discovered'\cf4 ,\cf6 'FCMReg'\cf4 ,\cf6 'APNSReg'\cf4 ,\cf6 'appOpn'\cf4 ,\cf6 'appOpen'\cf4 ,\cf6 'google_play_services'\cf4 ,\cf6 'fetchTestDefinitionsError'\cf4 ,\cf6 'messages_scheduler_ended'\cf4 ,\cf6 'messages_scheduler_started'\cf4 ,\cf6 'chat_auth_fail'\cf4 ,\cf6 'item_chat_multi_delete'\cf2 ) \cf4 AND \cf2 trackevent \cf4 IS NOT NULL AND \cf2 trackevent \cf4 NOT LIKE \cf6 'b2c%'\cf2 ))\
+   \cf9 --and a.app_version = '13.25.008'\
+\cf4 group by \cf7 1\
+\
+\
+\cf4 select\
+ \cf2 date_event_nk\cf4 ,\
+ count\cf2 (\cf4 distinct \cf2 session_long) \cf4 as \cf2 dub\
+\cf4 from \cf2 ods.panameraolx_asia_hydra_ninja_android_last_month a\
+   \cf9 --join app_version_with_no_bundles b on a.app_version=b.app_version\
+ \cf4 where \cf2 trackevent \cf4 in \cf2 (\cf6 'item_tap_call' \cf4 , \cf6 'item_chat_tap_send_1st_reply' \cf4 , \cf6 'item_tap_sms' \cf4 , \cf6 'item_chat_tap_sms'\cf2 )\
+   \cf4 and \cf2 a.app_version = \cf6 '13.25.008'\
+\cf4 group by \cf7 1\
+\
+\
+\
+\cf4 select\
+ \cf2 date_event_nk\cf4 ,\
+ count\cf2 (\cf4 distinct \cf2 session_long) \cf4 as \cf2 dau\
+\cf4 from \cf2 ods.panameraolx_asia_hydra_ninja_android_last_month a\
+  \cf9 --join app_version_with_no_bundles b on a.app_version=b.app_version\
+  \cf4 where \cf2 trackevent = \cf6 'search_start'\
+    \cf4 and \cf2 country_sk = \cf6 'olx|asia|in'\
+   \cf4 and \cf2 app_version = \cf6 '13.25.008'\
+\cf4 group by \cf7 1\
+\
+\cf4 select\
+ \cf2 date_event_nk\cf4 ,\
+ count\cf2 (\cf4 distinct \cf2 session_long) \cf4 as \cf2 dau\
+\cf4 from \cf2 ods.panameraolx_asia_hydra_ninja_android_last_month a\
+  \cf9 --join app_version_with_no_bundles b on a.app_version=b.app_version\
+  \cf4 where \cf2 trackevent = \cf6 'browse_category_select'\
+   \cf4 and \cf2 app_version = \cf6 '13.25.008'\
+   \cf4 and \cf2 country_sk=\cf6 'olx|asia|in'\
+\cf4 group by \cf7 1\
+\
+\cf4 select\
+ \cf2 date_event_nk\cf4 ,\
+ count\cf2 (\cf4 distinct \cf2 session_long) \cf4 as \cf2 dau\
+\cf4 from \cf2 ods.panameraolx_asia_hydra_ninja_android_last_month a\
+  \cf9 --join app_version_with_no_bundles b on a.app_version=b.app_version\
+    \cf4 where \cf2 trackevent = \cf6 'social_tap_like'\
+   \cf4 and \cf2 app_version = \cf6 '13.25.008'\
+\cf4 group by \cf7 1\
+\
+\
+\
+\
+\
+\cf4 select \cf2 trackevent \cf4 , count\cf2 (\cf4 distinct \cf2 session_long) \cf4 from \cf2 ods.panameraolx_asia_hydra_ninja_android_last_month\
+\cf4 where \cf2 trackevent \cf4 like \cf6 '%search%' \cf4 and \cf2 date_event_nk=\cf6 '2019-12-12'\
+\cf4 group by \cf7 1\
+\
+\
+\
+\
+\
+\
+\cf4 select count\cf2 (*) \cf4 from \cf2 ods.panameraolx_mea_hydra_ninja_android_last_month\
+ \cf4 where \cf2 country_sk=\cf6 'olx|mea|pk' \cf4 and \cf2 user_nk=\cf6 '100022196' \cf4 and \cf2 date_event_nk>\cf6 '2019-12-01'\
+  \cf4 and \cf2 trackevent \cf4 like \cf6 '%deactivate%'\
+\
+\cf4 select count\cf2 (*) \cf4 from \cf2 ods.panameraolx_mea_hydra_ninja_ios_last_month\
+ \cf4 where \cf2 country_sk=\cf6 'olx|mea|pk' \cf4 and \cf2 user_nk=\cf6 '100421403' \cf4 and \cf2 date_event_nk>\cf6 '2019-12-01'\
+  \cf4 and \cf2 trackevent \cf4 like \cf6 '%deactivate%'\
+\
+\cf4 select \cf2 trackevent \cf4 , \cf2 channel_sk \cf4 , \cf2 date_event_nk\cf4 , count\cf2 (*) \cf4 from \cf2 ods.panameraolx_mea_hydra_ninja_web_last_month\
+ \cf4 where \cf2 country_sk=\cf6 'olx|mea|pk' \cf4 and \cf2 user_nk=\cf6 '100421403' \cf4 and \cf2 date_event_nk>\cf6 '2019-12-01'\
+  \cf4 and \cf2 trackevent \cf4 like \cf6 '%deactivate%'\
+   \cf4 group by \cf7 1\cf4 ,\cf7 2\cf4 ,\cf7 3\
+\
+\cf4 select \cf2 * \cf4 from \cf2 ods.panameraolx_mea_hydra_ninja_web_last_month\
+ \cf4 where \cf2 country_sk=\cf6 'olx|mea|pk' \cf4 and \cf2 user_nk=\cf6 '100022196' \cf4 and \cf2 date_event_nk = \cf6 '2019-12-17'\
+  \cf9 --and trackevent like '%deactivate%'\
+\cf4 order by \cf2 time_event_local\
+\cf4 limit \cf7 500\
+\
+\
+\
+}

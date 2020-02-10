@@ -1,0 +1,442 @@
+
+
+SELECT extract(month from created_at)            as month,
+       FROM olxpk.users
+    LIMIT 100
+
+SELECT
+  extract(year from created_at)                                                                    as year,
+  extract(month from created_at)                                                                   as month,
+  extract(day from created_at)                                                                     as day,
+  COUNT(distinct CASE WHEN default_person = 'OLX User' AND type='confirmed' THEN id ELSE NULL END) as olx_users,
+  COUNT(distinct CASE WHEN type='confirmed' THEN id ELSE NULL END)                                 as total_users
+FROM olxpk.users
+  WHERE created_at >= '2018-10-01'
+GROUP BY 1,2,3;
+
+SELECT distinct id FROM olxpk.users
+    WHERE default_person != 'OLX User' and type = 'confirmed'
+        AND created_at > '2018-08-01'
+
+
+select registration, count(id), sum(has_image)*100/count(id) perc_with_image, sum(real_name)*100/count(id) perc_real_name from
+    (select a.id, DATE(a.created_at) registration, a.default_person, a.default_person!='OLX User' real_name, b.external_key is not Null and b.external_key>0 has_image
+        from users a
+            left join (select distinct external_key from images where active=1 and type='user') b on a.id=b.external_key
+        where a.created_at > '2018-10-01'
+    ) c
+group by 1
+order by 1 asc
+
+
+
+select * from users limit 100
+
+select registration, count(id), sum(has_image), sum(real_name) perc_real_name from
+    (select a.id as user_id, DATE(a.created_at) registration, a.default_person, a.default_person!='OLX User' real_name, b.external_key is not Null and b.external_key>0 has_image
+        from olxpk.users a
+            left join (select distinct external_key from olxpk.images where active=1 and type='user') b on a.id=b.external_key
+        where a.created_at > '2018-10-01'
+        and type = 'confirmed'
+    ) c
+group by 1
+order by 1 asc
+
+
+select a.id as user_id, DATE(a.created_at) registration, a.default_person, a.default_person!='OLX User' real_name, b.external_key is not Null and b.external_key>0 has_image
+        from olxpk.users a
+            left join (select distinct external_key from olxpk.images where active=1 and type='user') b on a.id=b.external_key
+        where a.created_at > '2018-10-01'
+        and type = 'confirmed'
+
+
+
+-----------------------------------
+---- Photo Analysis ---------------
+select * from (
+
+  select
+    a.id,
+    DATE(a.created_at)                                registration,
+    a.default_person,
+    a.default_person != 'OLX User'                    real_name,
+    b.external_key is not Null and b.external_key > 0 has_image
+  from olxpk.users a
+    left join (select distinct external_key
+               from olxpk.images
+               where active = 1 and type = 'user') b on a.id = b.external_key
+  where a.created_at > '2019-01-01'
+        and type = 'confirmed'
+) a
+  where real_name = 0 and has_image = 0
+  order by rand(id)
+  limit 500000
+
+select user_id , id , length(title) len_title , length(description) len_description , category_id ,subregion_id ,
+       case when person = 'OLX User' then 1 else 0 end as olx_user , is_paid_for_post , was_paid_for_post ,
+       replies_count , observed_count , b.external_key is not Null and b.external_key>0 has_image
+          from olxpk.ads a
+              left join (select distinct external_key from olxpk.images where active=1 and type='user') b on a.user_id=b.external_key
+      where status = 'active'
+
+
+select * from olxpk.ads
+  limit 100
+
+select * from ol limit 100
+
+
+-- Belu survey
+select count(distinct id) cantidad_de_ids , sum(real_name) has_name , sum(has_image) has_image from (
+select a.id, DATE(a.created_at) registration, a.default_person, a.default_person!='OLX User' real_name, b.external_key is not Null and b.external_key>0 has_image
+        from olxpk.users a
+            left join (select distinct external_key from olxpk.images where active=1 and type='user') b on a.id=b.external_key
+        where a.created_at > '2018-11-01' -- Dia de la migracion de pakistan
+          and type = 'confirmed') h
+
+
+select count(distinct id) from olxpk.users
+    where email like '%@gmail.com%' and google_id is not null
+  --
+
+
+
+select count(*) as user_id from olxpk.users
+  where type = 'merged'
+
+
+-------------------------------------
+------------------
+
+select
+  *
+from olxpk.users
+limit 100
+
+select
+  distinct public_phone
+from olxpk.users
+  where public_phone is not null and public_phone != ''
+
+select *
+from olxpk.users
+limit 100
+
+select * from (
+  select
+    id,
+    public_phone,
+    case when c.user_id is not null
+      then 1
+    else 0 end tiene_ads
+  from olxpk.users t
+    left join (select user_id , count()
+               from olxpk.ads where status='active') c on c.user_id = t.id
+      where public_phone is not null and public_phone != ''
+
+) c
+limit 100
+
+
+select * from olxpk.users
+  where email like 'lucasdresl%'
+
+select distinct us
+
+
+select * from u
+
+select * from (
+SELECT  id,
+        email,
+        case when default_phone is null then 0 else 1 end tiene_phone,
+        CASE
+             WHEN email LIKE '%olx.co%' THEN 0 -- Autogenerado
+             WHEN email LIKE '%@olx%' THEN 0 -- Autogenerado
+             WHEN email LIKE '%@letgo%' THEN 0
+             WHEN email LIKE '%DELETED%' THEN 0 -- Autogenerados
+             WHEN email LIKE '%UNLINK%' THEN 0 -- Autogenerados
+             WHEN email REGEXP '[0-9]{7}' THEN 0 -- Error de carga
+             ELSE 1 END  as valido_email,
+        SUBSTRING_INDEX(email,'@',-1) as domain
+FROM olxpk.users
+     where created_at > '2018-11-01'
+              and type in ('confirmed' , 'uncofirmed' , 'merged')) k
+
+
+
+select * from olxpk.users
+where default_phone is null
+limit 100
+
+-- Cantidad de usuarios
+
+=
+
+
+
+select id,default_phone,email from olxpk.users
+  where id = '14980489'
+    limit 100
+
+
+select tiene_phone , valido_email ,social_account , count(distinct id) as users from (
+SELECT  id,
+        email,
+        case when ((google_id is null and facebook_id is null) or (google_id = '' and facebook_id = '')) then 0 else 1 end social_account,
+        case when default_phone is null or default_phone='' then 0 else 1 end tiene_phone,
+        CASE
+             WHEN email LIKE '%olx.co%' THEN 0 -- Autogenerado
+             WHEN email LIKE '%@olx%' THEN 0 -- Autogenerado
+             WHEN email LIKE '%DELETED%' THEN 0 -- Autogenerados
+             WHEN email LIKE '%UNLINK%' THEN 0 -- Autogenerados
+             WHEN email REGEXP '[0-9]{7}' THEN 0 -- Error de carga
+             ELSE 1 END  as valido_email
+        -- SUBSTRING_INDEX(email,'@',-1) as domain
+FROM olxpk.users
+   where type in ('confirmed' , 'unconfirmed')
+        and created_at > '2018-11-02') k
+  group by 1,2,3
+
+select
+  id,email,default_phone,google_id,facebook_id ,created_at
+  from olxpk.users
+ where id = '100098976' and google_id <> ''
+
+select
+  id,email,default_phone,google_id,facebook_id ,created_at
+  from olxpk.users
+ where ((google_id is null and facebook_id is null) or (google_id = '' and facebook_id = ''))
+    and created_at > '2018-11-01'
+limit 500
+
+
+
+
+
+--
+
+-- progress bar
+
+SELECT
+        sum(case when ((google_id is null and facebook_id is null) or (google_id = '' and facebook_id = '')) then 0 else 1 end) social_account,
+        sum(case when default_phone is null or default_phone='' then 0 else 1 end) as tiene_phone,
+        sum(CASE
+             WHEN email LIKE '%olx.co%' THEN 0 -- Autogenerado
+             WHEN email LIKE '%@olx%' THEN 0 -- Autogenerado
+             WHEN email LIKE '%DELETED%' THEN 0 -- Autogenerados
+             WHEN email LIKE '%UNLINK%' THEN 0 -- Autogenerados
+             WHEN email REGEXP '[0-9]{7}' THEN 0 -- Error de carga
+             ELSE 1 END)  as valido_email,
+        sum(case when default_person!='OLX User' then 1 else 0 end) as real_name,
+        sum(case when b.external_key is not Null and b.external_key>0 then 1 else 0 end) has_photo,
+        count(id)
+        -- SUBSTRING_INDEX(email,'@',-1) as domain
+FROM olxpk.users a
+    left join (select distinct external_key from olxpk.images where active=1 and type='user') b on a.id=b.external_key
+   where type in ('confirmed')
+        and created_at > '2018-11-01'
+
+
+-- profile completion
+
+SELECT  id,
+        email,
+        case when ((google_id is null and facebook_id is null) or (google_id = '' and facebook_id = '')) then 0 else 1 end) social_account,
+        case when default_phone is null or default_phone='' then 0 else 1 end tiene_phone,
+        CASE
+             WHEN email LIKE '%olx.co%' THEN 0 -- Autogenerado
+             WHEN email LIKE '%@olx%' THEN 0 -- Autogenerado
+             WHEN email LIKE '%DELETED%' THEN 0 -- Autogenerados
+             WHEN email LIKE '%UNLINK%' THEN 0 -- Autogenerados
+             WHEN email REGEXP '[0-9]{7}' THEN 0 -- Error de carga
+             ELSE 1 END  as valido_email
+        -- SUBSTRING_INDEX(email,'@',-1) as domain
+FROM olxpk.users
+    left join (select distinct external_key from olxpk.images where active=1 and type='user') b on a.id=b.external_key
+   where type in ('confirmed')
+        and created_at > '2019-01-01'
+   where id in ()
+
+
+
+SELECT
+        extract(year from created_at) as year ,
+        extract(month from created_at) as month,
+        extract(week from created_at) as week,
+        sum(case when ((google_id is null and facebook_id is null) or (google_id = '' and facebook_id = '')) then 0 else 1 end) social_account,
+        sum(case when default_phone is null or default_phone='' then 0 else 1 end) as tiene_phone,
+        sum(CASE
+             WHEN email LIKE '%olx.co%' THEN 0 -- Autogenerado
+             WHEN email LIKE '%@olx%' THEN 0 -- Autogenerado
+             WHEN email LIKE '%DELETED%' THEN 0 -- Autogenerados
+             WHEN email LIKE '%UNLINK%' THEN 0 -- Autogenerados
+             WHEN email REGEXP '[0-9]{7}' THEN 0 -- Error de carga
+             ELSE 1 END)  as valido_email,
+        sum(case when default_person!='OLX User' then 1 else 0 end) as real_name,
+        sum(case when b.external_key is not Null and b.external_key>0 then 1 else 0 end) has_photo,
+        count(id)
+        -- SUBSTRING_INDEX(email,'@',-1) as domain
+FROM olxpk.users a
+    left join (select distinct external_key from olxpk.images where active=1 and type='user') b on a.id=b.external_key
+   where type in ('confirmed')
+        and created_at > '2019-01-01'
+group by 1,2,3
+
+----
+
+select
+  *
+  from olxpk.users
+where created_at < '2018-10-15'
+limit 1000
+
+with google_users_pre_migration as (
+select
+id,
+case when google_id is not null and google_id != '' then 1 else 0 end as has_google_id
+from olxpk.users
+where
+  created_at < '2018-10-15'
+
+)
+
+# Communication ratings and reviews
+
+select distinct user_id from (
+select * from (
+  select h.*
+  from (
+         select
+           id as user_id,
+           default_person                                                                                    as username,
+           REPLACE(REPLACE(REPLACE(REPLACE(REPLACE(REPLACE(REPLACE(REPLACE(REPLACE(REPLACE(REPLACE(REPLACE(REPLACE(
+                                                                                                               REPLACE(
+                                                                                                                   REPLACE(
+                                                                                                                       REPLACE(
+                                                                                                                           REPLACE(
+                                                                                                                               default_person,
+                                                                                                                               ':',
+                                                                                                                               '%3A'),
+                                                                                                                           '/',
+                                                                                                                           '%2F'),
+                                                                                                                       '(',
+                                                                                                                       '%28'),
+                                                                                                                   ')',
+                                                                                                                   '%29'),
+                                                                                                               ';',
+                                                                                                               '%3B'),
+                                                                                                           '!', '%21'),
+                                                                                                   '@', '%40'), '+',
+                                                                                           '%2B'), '$', '%24'), ',',
+                                                                           '%2C'), '*', '%2A'), '?', '%3F'), '#',
+                                                   '%23'), '', '%5B'), ':', '%3A'), '/', '%2F'), ' ',
+                   '%20')                                                                                    AS name_encoded_url,
+           case when (google_id is null and facebook_id is null) or (google_id = '' and facebook_id = '')
+             then 0
+           else 1 end                                                                                        as has_social_account,
+           case when default_phone is null or default_phone = ''
+             then 0
+           else 1 end                                                                                        as has_phone,
+           CASE
+           WHEN email LIKE '%olx.co%'
+             THEN 0 -- Autogenerado
+           WHEN email LIKE '%@olx%'
+             THEN 0 -- Autogenerado
+           WHEN email LIKE '%DELETED%'
+             THEN 0 -- Autogenerados
+           WHEN email LIKE '%UNLINK%'
+             THEN 0 -- Autogenerados
+           WHEN email REGEXP '[0-9]{7}'
+             THEN 0 -- Error de carga
+           ELSE 1 END                                                                                        as has_email,
+           case when default_person != 'OLX User'
+             then 1
+           else 0 end                                                                                        as has_name,
+           case when b.external_key is not Null and b.external_key > 0
+             then 1
+           else 0 end                                                                                        as has_photo
+         from olxpk.users a
+           left join (select distinct external_key
+                      from olxpk.images
+                      where active = 1 and type = 'user') b on a.id = b.external_key
+         where type in ('confirmed')
+               and created_at > '2018-11-01'
+       ) h
+    inner join (select distinct user_id
+                from olxpk.ads
+                where status not like '%moderated%') m on h.user_id = m.user_id
+) t
+ where has_social_account=0 or has_phone=0 or has_email=0 or has_name=0 or has_photo=0
+) m
+
+
+SELECT  id,
+        email,
+        case when (google_id is null and facebook_id is null) or (google_id = '' and facebook_id = '') then 0 else 1 end social_account,
+        case when (default_phone is null) or (default_phone='') then 0 else 1 end tiene_phone,
+        CASE
+             WHEN email LIKE '%olx.co%' THEN 0 -- Autogenerado
+             WHEN email LIKE '%@olx%' THEN 0 -- Autogenerado
+             WHEN email LIKE '%DELETED%' THEN 0 -- Autogenerados
+             WHEN email LIKE '%UNLINK%' THEN 0 -- Autogenerados
+             ELSE 1 END  as valido_email,
+        CASE when default_person!='OLX User' then 1 else 0 end as real_name,
+        CASE when b.external_key is not Null and b.external_key>0 then 1 else 0 end as has_photo
+FROM olxpk.users a
+    left join (select distinct external_key from olxpk.images where active=1 and type='user') b on a.id=b.external_key
+   where type = 'confirmed'
+limit 100
+
+
+
+
+select
+   *
+  from olxp
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+SELECT
+        extract(year from created_at) as year ,
+        extract(month from created_at) as month,
+        extract(day from created_at) as day,
+        sum(case when ((google_id is null and facebook_id is null) or (google_id = '' and facebook_id = '')) then 0 else 1 end) social_account,
+        sum(case when default_phone is null or default_phone='' then 0 else 1 end) as tiene_phone,
+        sum(CASE
+             WHEN email LIKE '%olx.co%' THEN 0 -- Autogenerado
+             WHEN email LIKE '%@olx%' THEN 0 -- Autogenerado
+             WHEN email LIKE '%DELETED%' THEN 0 -- Autogenerados
+             WHEN email LIKE '%UNLINK%' THEN 0 -- Autogenerados
+             WHEN email REGEXP '[0-9]{7}' THEN 0 -- Error de carga
+             ELSE 1 END)  as valido_email,
+        sum(case when default_person!='OLX User' then 1 else 0 end) as real_name,
+        sum(case when b.external_key is not Null and b.external_key>0 then 1 else 0 end) has_photo,
+        count(id)
+        -- SUBSTRING_INDEX(email,'@',-1) as domain
+FROM olxpk.users a
+    left join (select distinct external_key from olxpk.images where active=1 and type='user') b on a.id=b.external_key
+   where type in ('confirmed')
+        and created_at > '2019-05-01'
+group by 1,2,3
+
+
+

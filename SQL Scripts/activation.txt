@@ -1,0 +1,1746 @@
+
+
+WITH verified AS (
+    SELECT session_long,date_event_nk
+from ods.panameraolx_asia_hydra_ninja_android_last_month
+WHERE session_long_seq = 1
+  group by 1,2
+)
+SELECT
+  date_event_nk,
+  COUNT(DISTINCT case when session_long_seq=1 then session_long else null end) as new_users,
+  COUNT(DISTINCT CASE WHEN trackevent = 'onboarding_show' THEN session_long ELSE NULL END) AS onboarding_show,
+  COUNT(DISTINCT CASE WHEN trackevent in ('item_tap_call' , 'item_chat_tap_send_1st_reply' , 'item_tap_sms' , 'item_chat_tap_sms') THEN session_long ELSE NULL END) AS repliers
+  FROM ods.panameraolx_asia_hydra_ninja_android_last_month
+JOIN verified USING (session_long,date_event_nk)
+group by 1
+;
+
+WITH verified AS (
+    SELECT session_long,date_event_nk
+from ods.panameraolx_asia_hydra_ninja_ios_last_month
+WHERE session_long_seq = 1
+  group by 1,2
+)
+SELECT
+  date_event_nk,
+  COUNT(DISTINCT CASE WHEN trackevent = 'onboarding_show' THEN session_long ELSE NULL END) AS new_users,
+  COUNT(DISTINCT CASE WHEN trackevent in ('item_tap_call' , 'item_chat_tap_send_1st_reply' , 'item_tap_sms' , 'item_chat_tap_sms') THEN session_long ELSE NULL END) AS repliers
+  FROM ods.panameraolx_asia_hydra_ninja_ios_last_month
+JOIN verified USING (session_long,date_event_nk)
+group by 1
+;
+
+
+drop table if exists returning_users;
+select
+  session_long,
+  date_event_nk,
+  min(session_long_seq) as min_session
+   into temp returning_users
+    from ods.panameraolx_asia_hydra_ninja_android_last_month
+  group by 1,2
+
+drop table if exists returnings_users;
+  select
+    session_long,
+    date_event_nk,
+    'returning' as type_users
+  into temp returnings_users
+   from returning_users
+     where min_session > 1
+ group by 1,2
+order by random()
+
+
+WITH verified AS (
+    SELECT session_long,date_event_nk,min(session_long_seq)
+ from ods.panameraolx_asia_hydra_ninja_android_last_month
+  group by 1,2
+  having min(session_long_seq) > 1
+)
+SELECT
+  date_event_nk,
+  COUNT(DISTINCT session_long) as returning_users,
+  COUNT(DISTINCT CASE WHEN trackevent in ('item_tap_call' , 'item_chat_tap_send_1st_reply' , 'item_tap_sms' , 'item_chat_tap_sms') THEN session_long ELSE NULL END) AS repliers
+  FROM ods.panameraolx_asia_hydra_ninja_android_last_month
+JOIN verified USING (session_long,date_event_nk)
+group by 1
+;
+
+
+select * from ods.fact_resultset_performance where country_sk = 'olx|asia|in' order by 1,3  limit 100
+
+
+
+
+
+
+
+--- New and returning replies
+
+drop table if exists dau_new;
+select
+  date_nk,
+  count(distinct session_long) as new_dau
+   into temp dau_new
+   from ods.fact_user_hydra_browsing_activity
+   --  left join (select session_long,user_sk,date_nk from ods.fact_user_hydra_browsing_activity where user_sk!='unknown' and is_panamera = true and country_sk in ('olx|mea|pk' , 'olx|mea|za' , 'olx|asia|in') and date_nk = '2019-06-11')
+ where
+   is_panamera = true
+    and date_nk >= '2019-05-01'
+    and country_sk in ('olx|asia|in')
+    and user_active_new_returning_nk = 'new'
+group by 1
+order by 1
+
+drop table if exists new_users_label;
+select
+  date_nk,
+  session_long,
+  user_sk
+   into temp new_users_label
+    from ods.fact_user_hydra_browsing_activity
+  where
+    is_panamera = true
+and country_sk = 'olx|asia|in'
+and user_active_new_returning_nk = 'new'
+ group by 1,2,3
+
+drop table if exists repliess;
+select
+   date_sent_nk,
+   count(distinct panamera_user_sk) as new_repliers
+  into temp repliess
+  from ods.fact_replies f1
+    inner join new_users_label f2 on f1.panamera_user_sk=f2.user_sk and f1.date_sent_nk=f2.date_nk
+    where country_sk = 'olx|asia|in'
+ and reply_num = 1
+ and date_sent_nk >= '2019-05-01'
+group by 1
+
+select
+  f1.date_nk,
+  f1.new_dau,
+  f2.new_repliers
+   from dau_new f1
+  inner join repliess f2 on f1.date_nk=f2.date_sent_nk
+
+
+
+
+
+
+drop table if exists dau_new;
+select
+  date_nk,
+  count(distinct session_long) as new_dau
+   into temp dau_new
+   from ods.fact_user_hydra_browsing_activity
+   --  left join (select session_long,user_sk,date_nk from ods.fact_user_hydra_browsing_activity where user_sk!='unknown' and is_panamera = true and country_sk in ('olx|mea|pk' , 'olx|mea|za' , 'olx|asia|in') and date_nk = '2019-06-11')
+ where
+   is_panamera = true
+    and date_nk >= '2019-05-01'
+    and country_sk in ('olx|asia|in')
+    and user_active_new_returning_nk = 'new'
+group by 1
+order by 2
+
+
+drop table if exists replies_web;
+select
+  session_long,
+  date_event_nk
+  into temp replies_web
+   from ods.panameraolx_asia_hydra_ninja_web_last_month
+   where country_sk =  'olx|asia|in'
+  and country_sk in ('olx|mea|pk' , 'olx|mea|za' , 'olx|asia|in')
+  and trackevent in ('item_tap_call' , 'item_chat_tap_send_1st_reply' , 'item_tap_sms' , 'item_chat_tap_sms')
+group by 1,2
+
+drop table if exists replies_android;
+select
+  session_long,
+  date_event_nk
+  into temp replies_android
+   from ods.panameraolx_asia_hydra_ninja_android_last_month
+   where country_sk =  'olx|asia|in'
+  and country_sk in ('olx|mea|pk' , 'olx|mea|za' , 'olx|asia|in')
+  and trackevent in ('item_tap_call' , 'item_chat_tap_send_1st_reply' , 'item_tap_sms' , 'item_chat_tap_sms')
+group by 1,2
+
+drop table if exists replies_ios;
+select
+  session_long,
+  date_event_nk
+  into temp replies_ios
+   from ods.panameraolx_asia_hydra_ninja_ios_last_month
+   where country_sk =  'olx|asia|in'
+  and country_sk in ('olx|mea|pk' , 'olx|mea|za' , 'olx|asia|in')
+  and trackevent in ('item_tap_call' , 'item_chat_tap_send_1st_reply' , 'item_tap_sms' , 'item_chat_tap_sms')
+group by 1,2
+
+
+
+
+
+drop table if exists returning_users_label;
+select
+  v.date_nk,
+  v.session_long,
+  v.user_sk
+   into temp returning_users_label
+   from ods.fact_user_hydra_browsing_activity v
+     left join new_users_label t on v.session_long=t.session_long and v.date_nk=t.date_nk and v.user_sk=t.user_sk
+ where
+   is_panamera = true
+    and v.date_nk >= '2019-05-01'
+    and v.country_sk in ('olx|asia|in')
+    and t.date_nk is null
+group by 1,2,3
+order by 3
+
+drop table if exists returning_dau;
+select
+  date_nk,
+  count(distinct session_long) as returning_dau
+    into temp table returning_dau
+  from returning_users_label
+    group by 1
+
+
+drop table if exists retu_repliess;
+select
+   date_sent_nk,
+   count(distinct panamera_user_sk) as new_repliers
+  into temp retu_repliess
+  from ods.fact_replies f1
+    inner join returning_users_label f2 on f1.panamera_user_sk=f2.user_sk and f1.date_sent_nk=f2.date_nk
+    where country_sk = 'olx|asia|in'
+ and reply_num = 1
+ and date_sent_nk >= '2019-05-01'
+group by 1
+
+select
+  f1.date_nk,
+  f1.returning_dau,
+  f2.new_repliers
+   from returning_dau f1
+  inner join retu_repliess f2 on f1.date_nk=f2.date_sent_nk
+
+
+-- opcion 1
+
+drop table if exists replies;
+select
+  date_sent_nk,
+  country_sk,
+  panamera_user_sk
+  into temp replies
+  from ods.fact_replies
+  where
+    date_sent_nk = '2019-06-11'
+    and country_sk in ('olx|mea|pk' , 'olx|mea|za' , 'olx|asia|in')
+group by 1,2,3
+
+
+drop table if exists dau_and_replies_new;
+select
+  m.*,
+  case when v.panamera_user_sk is not null then 1 else 0 end as replier
+  into temp dau_and_replies_new
+    from dau_new m
+   left join replies v on v.panamera_user_sk=m.user_sk and v.date_sent_nk=m.date_nk and v.country_sk=m.country_sk
+
+
+select * from dau_new order by 3 limit 100
+
+
+select
+  count(distinct session_long)
+  from dau_and_replies_new
+  where replier = 1
+limit 100
+
+select
+  country_sk,
+  count(distinct session_long) as dau_new,
+  count(distinct case when replier=0 then session_long else null end) as repliers
+   from dau_and_replies_new
+     group by 1
+
+select * from dau_and_replies_new order by 3 limit 109
+--- opcion 2
+
+
+
+drop table if exists replies;
+  select * from replies_android
+  union all
+  select * from replies_web
+  union all
+  select * into temp replies from replies_ios
+
+
+select
+  t.*,
+  case when b.session_long is not null then 1 else 0 end replier
+  from dau t
+   left join replies b on b.session_long=t.session_long
+limit 100
+
+
+-- chequear cuantos replies deslogeados hay - si hay no puede cruzar con la base de replies
+select
+  date_sent_nk,
+  COUNT(distinct case when panamera_user_sk = 'unknown' then panamera_user_sk else null end) as unlogg_replies,
+  COUNT(distinct case when panamera_user_sk != 'unknown' then panamera_user_sk else null end) as log_replies
+  from ods.fact_replies
+  where
+        date_sent_nk = '2019-02-28'
+    and country_sk in ('olx|mea|pk' , 'olx|mea|za' , 'olx|asia|in')
+group by 1
+
+
+
+------
+
+
+
+
+
+
+select
+  date_nk,
+  country_sk,
+  count(distinct case when user_active_new_returning_nk = 'new' then session_long else null end) as new_users,
+  count(distinct case when user_active_new_returning_nk = 'returning' then session_long else null end) as returning_user,
+  from ods.fact_user_hydra_browsing_activity
+ where is_panamera = true
+   and date_nk > '2019-02-01'
+   and country_sk in ('olx|mea|pk' , 'olx|mea|za' , 'olx|asia|in')
+  group by 1,2
+
+
+
+select
+  panamera_user_sk,
+  date_sent_nk
+    from ods.fact_replies
+ where
+   and date_nk > '2019-02-01'
+   and reply_num_panamera = 1
+   and
+
+
+
+    SELECT session_long,date_event_nk,min(session_long_seq)
+ from ods.panameraolx_asia_hydra_ninja_ios_last_month
+
+  WHERE (trackevent  NOT IN ('app_open', 'on_create', 'apps', 'push_dis','pushDis', 'push_rcv', 'pushRcv', 'UAReg', 'ua_reg', 'uareg','push_dismissed', 'push_show', 'fetching_matrix', 'not_found','permissions_impression','userBadgeCount','test_assignment', 'google_play_services','test_impression','test_discovered','appOpen', 'fetchTestDefinitionsError', 'insertActiveTestListError', 'updateActiveTestError', 'deleteAllActiveTestsError', 'getActiveTestListError', 'getExistingActiveTestListError', 'insertDiscoveredTestListError', 'getDiscoveredTestListError', 'getChangedDiscoveredTestListError', 'deleteDiscoveredTestsThatAreActiveError', 'deleteExpiredDiscoveredTestsError', 'setNotExecutedError', 'contextIsNull', 'contextIsNotInstanceOfApplication', 'configIsNull', 'fetchTestDefinitionsError', 'test_assignment', 'test_impression', 'test_discovered') OR
+        trackevent NOT ILIKE 'b2c%')
+
+  group by 1,2
+  having min(session_long_seq) > 1
+
+
+
+
+
+select
+  session_long_sk,
+  b.session_long
+   from ods.fact_resultset_performance t
+    inner join (select session_long from ods.fact_user_hydra_browsing_activity where country_sk='olx|asia|in' group by 1) b on b.session_long=t.session_long_sk
+  limit 100
+
+
+select session_long ,session_long_sk
+   from ods.fact_user_hydra_browsing_activity
+     where country_sk = 'olx|asia|in' and date_nk = '2019-04-01'
+  --group by 1
+limit 100
+
+
+
+---
+
+
+drop table if exists new_users_label;
+select
+  date_nk,
+  session_long,
+  user_sk
+   into temp new_users_label
+    from ods.fact_user_hydra_browsing_activity
+  where
+    is_panamera = true
+and country_sk = 'olx|asia|in'
+and user_active_new_returning_nk = 'new'
+and date_nk >= '2019-05-01'
+ group by 1,2,3
+
+select
+  a.date_nk,
+  (case when search_string notnull then 'Search'
+        when a.category_sk!='unknown' and search_string isnull then 'Browse'
+        when a.category_sk='unknown' and search_string isnull  then 'Home'  end) as Flow_new,
+
+  count(distinct a.session_long_sk) starters_new_users
+, count(distinct case when a.num_ads_with_adviews>'0' then a.session_long_sk else null end) adviewers_new_users
+, count(distinct case when ((a.num_ads_with_item_chat_tap_send_1st_reply+a.num_ads_with_item_chat_tap_send_offer)>'0')
+                            or ((a.num_ads_with_item_tap_call)>'0')
+                            then a.session_long_sk else null end) repliers_new_users
+
+from ods.fact_resultset_performance a
+  inner join new_users_label f1 on f1.session_long=split_part(session_long_sk , '|' , 7) and f1.date_nk=a.date_nk
+ where a.country_sk='olx|asia|in'
+and a.date_nk >= '2019-05-01'
+group by a.date_nk, Flow_new;
+
+
+
+
+select
+  a.date_nk,
+  b.date_nk as born_date,
+  a.session_long,
+  num_tap_call,
+  num_chat_1st_reply,
+  num_successful_post,
+  datediff(days ,b.date_nk,a.date_nk) as date_diff
+  from ods.fact_user_hydra_browsing_activity a
+    left join new_users_label b on a.session_long=b.session_long
+ where
+     is_panamera = true
+and country_sk = 'olx|asia|in'
+and a.date_nk >= '2019-05-01'
+and user_active_new_returning_nk = 'new'
+and (num_tap_call > 0 or num_chat_1st_reply > 0 or num_successful_post > 0)
+and datediff(days ,b.date_nk,a.date_nk) > 0
+  group by 1,2,3,4,5,6
+order by session_long,date_nk
+limit 100
+
+
+
+
+
+
+-- Browser
+drop table if exists new_users_label;
+select
+  date_nk,
+  session_long,
+  user_sk
+   into temp new_users_label
+    from ods.fact_user_hydra_browsing_activity
+  where
+    is_panamera = true
+and country_sk = 'olx|asia|in'
+and user_active_new_returning_nk = 'new'
+and date_nk >= '2019-05-01'
+ group by 1,2,3
+
+drop table if exists browser;
+select
+ b.date_nk,
+ count(distinct session_long) as new_browser
+ into temp table browser
+  from new_users_label b
+    inner join (select user_sk,date_posted_nk from ods.fact_listings where country_sk='olx|asia|in' and date_posted_nk>='2019-05-01' and listing_net_sk like 'net%') a on a.user_sk=b.user_sk
+    inner join (select user_sk,date_sent_nk from ods.fact_replies where country_sk='olx|asia|in' and date_sent_nk>='2019-05-01' and reply_num=1) c on c.user_sk=b.user_sk
+group by 1
+
+select * from browser limit 100
+select * from dau_new limit 100
+
+
+drop table if exists quantity_browser;
+select
+  born_date,
+  count(distinct session_long) as new_browser
+  into temp quantity_browser
+   from browser
+  group by 1
+
+select
+  *
+   from dau_new a
+    join browser v on v.date_nk=a.date_nk
+
+
+select
+  *
+  from spectrum.usercomms_quijote_incoming_events
+
+
+
+
+
+drop table if exists dau_new;
+select
+  date_nk,
+  count(distinct session_long) as new_dau
+   into temp dau_new
+   from ods.fact_user_hydra_browsing_activity
+   --  left join (select session_long,user_sk,date_nk from ods.fact_user_hydra_browsing_activity where user_sk!='unknown' and is_panamera = true and country_sk in ('olx|mea|pk' , 'olx|mea|za' , 'olx|asia|in') and date_nk = '2019-06-11')
+ where
+   is_panamera = true
+    and date_nk >= '2019-05-01'
+    and country_sk in ('olx|asia|in')
+    and user_active_new_returning_nk = 'new'
+group by 1
+order by 1
+
+;drop table if exists new_users_label;
+select
+  session_long,
+  user_sk
+   into temp new_users_label
+    from ods.fact_user_hydra_browsing_activity
+  where
+    is_panamera = true
+and country_sk = 'olx|asia|in'
+and user_active_new_returning_nk = 'new'
+and date_nk = '2019-05-16'
+ group by 1,2
+
+;drop table if exists repliets;
+select
+   panamera_user_sk
+  into temp repliets
+  from ods.fact_replies f1
+    where country_sk = 'olx|asia|in'
+  and reply_num = 1
+  and date_sent_nk >= '2019-05-16' and date_sent_nk <= '2019-06-13'
+group by 1;
+
+select count(distinct user_sk)
+from new_users_label b inner join repliets k on k.panamera_user_sk=b.user_sk
+limit 100
+
+;drop table if exists listingss;
+select
+   user_sk
+  into temp listingss
+  from ods.fact_listings f1
+    where country_sk = 'olx|asia|in'
+  and listing_net_sk like 'net%'
+  and date_posted_nk >= '2019-05-16' and date_posted_nk <= '2019-06-13'
+group by 1;
+
+select
+  count(distinct session_long) as dau ,
+  COUNT(distinct case when has_reply=1 then session_long else null end) from (
+select
+--count(distinct a.user_sk) as usuarios_que_hicieron_algo
+  session_long,
+  a.user_sk,
+--  b.user_sk as user_sk_listing,
+  c.panamera_user_sk,
+--  case when b.user_sk is null then 0 else 1 end has_post,
+  case when c.panamera_user_sk is null then 0 else 1 end has_reply
+  from new_users_label a
+--   left join listingss b on a.user_sk=b.user_sk
+   left join repliess c on c.panamera_user_sk=a.user_sk) t
+
+
+select  from new_users_label t
+left join repliess v on v.panamera_user_sk=t.user_sk
+limit 100
+
+
+
+select
+  f1.date_nk,
+  f1.new_dau,
+  f2.new_repliers
+   from dau_new f1
+  inner join repliess f2 on f1.date_nk=f2.date_sent_nk
+order by 1
+
+-------- ACTIVATION / MAU --------------
+
+drop table if exists mau;
+select
+  extract(month from date_nk) as month,
+  session_long
+  into temp mau
+   from ods.fact_user_hydra_browsing_activity
+ where is_panamera=true
+ and country_sk='olx|asia|in'
+ and extract(year from date_nk)=2019
+  group by 1,2
+
+drop table if exists session_long_and_usersk;
+select
+  extract(month from date_nk) as month,
+  session_long,
+  user_sk
+  into temp table session_long_and_usersk
+     from ods.fact_user_hydra_browsing_activity
+    where is_panamera = true
+ and country_sk='olx|asia|in'
+ and user_sk != 'unknown'
+ and extract(year from date_nk)=2019
+group by 1,2,3
+
+drop table if exists mau_with_user_sk;
+select
+  f1.month,
+  f1.session_long,
+  f2.user_sk
+  into temp table mau_with_user_sk
+  from mau f1
+    left join session_long_and_usersk f2 on f1.session_long=f2.session_long and f1.month=f2.month
+ order by 2,1
+
+drop table if exists mau_listers;
+select
+  extract(month from date_posted_nk) as month,
+  user_sk
+  into temp table mau_listers
+ from ods.fact_listings
+ where
+    listing_net_sk like 'net%'
+and country_sk='olx|asia|in'
+and extract(year from date_posted_nk)=2019
+group by 1,2
+
+drop table if exists mau_repliers;
+select
+  extract(month from date_sent_nk) as month,
+  panamera_user_sk
+ into temp mau_repliers
+ from ods.fact_replies
+where reply_num=1
+  and country_sk='olx|asia|in'
+  and extract(year from date_sent_nk)=2019
+  and panamera_user_sk!='unknown'
+group by 1,2
+
+drop table if exists mau_users;
+select
+  month,
+  count(distinct session_long) as mau
+   into temp mau_users
+  from mau
+  group by 1 order by 1
+
+drop table if exists activation_mau;
+select
+  a.month,
+  count(distinct session_long) as activation_mau
+  into temp table activation_mau
+from mau_with_user_sk a
+  inner join mau_listers b on a.user_sk=b.user_sk and a.month=b.month
+  inner join mau_repliers c on a.user_sk=c.panamera_user_sk and a.month=b.month
+group by 1
+
+select
+  t.month,
+  t.mau,
+  b.activation_mau
+   from mau_users t
+  inner join activation_mau b on b.month=t.month
+
+------------------------------
+
+drop table if exists new_users_label;
+select
+  date_nk,
+  session_long
+   into temp new_users_label
+    from ods.fact_user_hydra_browsing_activity
+  where
+    is_panamera = true
+and country_sk = 'olx|asia|in'
+and user_active_new_returning_nk = 'new'
+and date_nk >= '2019-04-01'
+ group by 1,2;
+
+
+drop table if exists returning_users_label;
+select
+  v.date_nk,
+  v.session_long
+   into temp returning_users_label
+   from ods.fact_user_hydra_browsing_activity v
+     left join new_users_label t on v.session_long=t.session_long and v.date_nk=t.date_nk
+ where
+   is_panamera = true
+    and v.date_nk >= '2019-04-01'
+    and v.country_sk in ('olx|asia|in')
+    and t.date_nk is null
+group by 1,2
+order by 2
+
+select
+  a.date_nk,
+  (case when search_string notnull then 'Search'
+        when a.category_sk!='unknown' and search_string isnull then 'Browse'
+        when a.category_sk='unknown' and search_string isnull  then 'Home'  end) as Flow_new,
+
+  count(distinct a.session_long_sk) starters_new_users
+, count(distinct case when a.num_ads_with_adviews>'0' then a.session_long_sk end) adviewers_new_users
+, count(distinct case when ((a.num_ads_with_item_chat_tap_send_1st_reply+a.num_ads_with_item_chat_tap_send_offer)>'0')
+                            or ((a.num_ads_with_item_tap_call)>'0')
+                            then a.session_long_sk end) repliers_new_users
+
+from ods.fact_resultset_performance a
+  inner join returning_users_label f1 on f1.session_long=split_part(session_long_sk , '|' , 7) and f1.date_nk=a.date_nk
+ where a.country_sk='olx|asia|in'
+and a.date_nk >= '2019-04-01'
+group by a.date_nk, Flow_new
+order by 1;
+
+
+select
+  *
+   from ods.fact_resultset_performance
+ where country_sk='olx|asia|in'
+ and date_nk > '2019-04-01'
+order by session_long_sk,time_local
+ limit 300
+
+
+select
+  date_nk,
+  count(distinct session_long) as dau
+   from ods.fact_user_hydra_browsing_activity
+ where is_panamera = true
+and country_sk = 'olx|asia|in'
+and date_nk > '2019-02-11'
+and channel_sk like '%android%'
+ group by 1
+
+select
+  date_nk,
+  count(distinct case when user_active_new_returning_nk='new' then session_long else null end) as dau_new,
+  count(distinct session_long) as dau
+   from ods.fact_user_hydra_browsing_activity
+ where is_panamera = true
+and country_sk = 'olx|asia|in'
+and date_nk > '2019-02-11'
+and channel_sk like '%android%'
+ group by 1
+
+
+
+
+---------------------------------------
+
+;drop table if exists first_date_in_app;
+select
+  split_part(user_sk , '|' , 6) as user_id,
+  min(date_nk) as first_date
+   into temp first_date_in_app
+    from ods.fact_user_hydra_browsing_activity
+  where
+         is_panamera = true
+     and country_sk = 'olx|asia|in'
+     and user_active_new_returning_nk = 'new'
+   group by 1
+
+
+;drop table if exists first_date_reply;
+select
+   split_part(panamera_user_sk , '|' , 7) as user_id,
+   min(date_sent_nk) as first_date_of_reply
+  into temp first_date_reply
+  from ods.fact_replies f1
+      where country_sk = 'olx|asia|in'
+  and reply_num = 1
+group by 1;
+
+
+
+;drop table if exists first_date_in_app;
+select
+    f1.user_id,
+    f1.first_date,
+    f2.first_date_of_reply
+  into temp table first_date_in_app
+  from first_date_in_app f1
+   inner join first_date_reply f2 on f1.user_id=f2.user_id
+
+----------------------------------
+
+drop table if exists first_date_in_app_android;
+select
+  session_long,
+  min(date_event_nk) as first_date_in
+  into temp table first_date_in_app_android
+   from ods.panameraolx_asia_hydra_ninja_android_last_month
+  where
+     trackevent = 'onboarding_show'
+ group by 1
+
+drop table if exists first_reply_in_app_android;
+select
+  session_long,
+  min(date_event_nk) as first_date_reply
+  into temp table first_reply_in_app_android
+   from ods.panameraolx_asia_hydra_ninja_android_last_month
+  where
+    trackevent in ('item_tap_call' , 'item_chat_tap_send_1st_reply' , 'item_tap_sms' , 'item_chat_tap_sms')
+ group by 1
+
+
+drop table if exists dataframe_survival;
+select
+  f1.session_long,
+  f1.first_date_in,
+  f2.first_date_reply,
+  case when f2.first_date_reply is null then 0 else 1 end as has_made_event,
+  datediff(days,first_date_in, first_date_reply) as time_to_event
+   into temp table dataframe_survival
+  from first_date_in_app_android f1
+   left join  first_reply_in_app_android f2 on f1.session_long=f2.session_long
+ where
+   datediff(days,first_date_in, first_date_reply) >= 0 or datediff(days,first_date_in, first_date_reply) is null
+
+
+select
+  time_to_event,
+  count(distinct session_long)
+   from dataframe_survival
+ group by 1
+
+
+select
+  date_nk,
+  channel_sk,
+  count(distinct case when user_active_new_returning_nk = 'new' then session_long else null end) as new_users,
+  count(distinct session_long) as total_users
+  from ods.fact_user_hydra_browsing_activity
+ where is_panamera = true
+   and date_nk > '2019-04-01'
+   and country_sk in ('olx|asia|in')
+   and channel_sk in ('web|mobile_web' , 'web|desktop_web' , 'mobile_app|ios','mobile_app|android')
+  group by 1,2
+
+
+
+-------------------------------------------------
+
+drop table if exists dau_new;
+select
+  date_nk,
+  count(distinct session_long) as new_dau
+   into temp dau_new
+   from ods.fact_user_hydra_browsing_activity
+   --  left join (select session_long,user_sk,date_nk from ods.fact_user_hydra_browsing_activity where user_sk!='unknown' and is_panamera = true and country_sk in ('olx|mea|pk' , 'olx|mea|za' , 'olx|asia|in') and date_nk = '2019-06-11')
+ where
+   is_panamera = true
+    and date_nk >= '2019-05-01'
+    and country_sk in ('olx|asia|in')
+    and user_active_new_returning_nk = 'new'
+group by 1
+order by 1
+
+;drop table if exists new_users_label;
+select
+  date_nk,
+  session_long,
+  user_sk
+   into temp new_users_label
+    from ods.fact_user_hydra_browsing_activity
+  where
+    is_panamera = true
+and country_sk = 'olx|asia|in'
+and user_active_new_returning_nk = 'new'
+and user_sk != 'unknown'
+and date_nk >= '2019-05-01'
+ group by 1,2,3
+
+;drop table if exists repliess;
+select
+   date_sent_nk,
+   count(distinct session_long) as new_repliers
+  into temp repliess
+  from ods.fact_replies f1
+    inner join new_users_label f2 on f1.panamera_user_sk=f2.user_sk and f1.date_sent_nk=f2.date_nk
+    where country_sk = 'olx|asia|in'
+  and reply_num = 1
+  and date_sent_nk >= '2019-05-01'
+group by 1;
+
+
+select * from dau_new limit 100
+select * from repliess limit 100
+
+select
+  f1.date_nk,
+  f1.new_dau,
+  f2.new_repliers
+   from dau_new f1
+  inner join repliess f2 on f1.date_nk=f2.date_sent_nk
+order by 1
+
+
+select
+  date_sent_nk,
+  session_long,
+  f1.user_sk,
+  f2.user_sk,
+  panamera_user_sk
+   from ods.fact_replies f1
+    inner join new_users_label f2 on f1.panamera_user_sk=f2.user_sk and f1.date_sent_nk=f2.date_nk
+    where country_sk = 'olx|asia|in'
+  and reply_num = 1
+  and date_sent_nk >= '2019-05-01'
+group by 1,2,3,4,5
+limit 100
+;
+
+;drop table if exists repliess;
+select
+   date_sent_nk,
+   count(distinct session_long) as returning_repliers
+  into temp repliess
+  from ods.fact_replies f1
+    left join new_users_label f2 on f1.panamera_user_sk=f2.user_sk and f1.date_sent_nk=f2.date_nk
+    where country_sk = 'olx|asia|in'
+ and reply_num = 1
+ and date_sent_nk >= '2019-05-01'
+ and f2.user_sk is null
+group by 1;
+
+
+;drop table if exists repliess;
+select
+   f1.date_sent_nk,
+   f2.date_nk,
+   f1.panamera_user_sk,
+   f2.user_sk as user_sk_browse_activity,
+   f2.session_long
+  into temp repliess
+  from ods.fact_replies f1
+    left join new_users_label f2 on f1.panamera_user_sk=f2.user_sk and f1.date_sent_nk=f2.date_nk
+    where country_sk = 'olx|asia|in'
+ and reply_num = 1
+ and date_sent_nk >= '2019-05-01'
+limit 100
+
+select * from repliess limit 100
+
+------------------------------------
+
+;drop table if exists mau;
+select
+  extract(month from date_nk) as month,
+  session_long
+  into temp mau
+   from ods.fact_user_hydra_browsing_activity
+ where is_panamera=true
+ and country_sk='olx|asia|in'
+ and extract(year from date_nk)=2019
+  group by 1,2
+
+;drop table if exists session_long_and_usersk;
+select
+  extract(month from date_nk) as month,
+  session_long,
+  user_sk
+  into temp table session_long_and_usersk
+     from ods.fact_user_hydra_browsing_activity
+    where is_panamera = true
+ and country_sk='olx|asia|in'
+ and user_sk != 'unknown'
+ and extract(year from date_nk)=2019
+group by 1,2,3
+
+
+-------------------------------
+
+
+drop table if exists dau_new_and_retur;
+select
+  date_nk,
+  count(distinct case when user_active_new_returning_nk = 'new' then session_long else null end) as new_users,
+  count(distinct session_long) as total_users
+  into temp table dau_new_and_retur
+  from ods.fact_user_hydra_browsing_activity
+ where is_panamera = true
+   and date_nk >= '2019-06-01'
+   and country_sk = 'olx|asia|in'
+  group by 1
+
+
+;drop table if exists new_users_label;
+select
+  date_nk,
+  session_long,
+  user_sk
+   into temp new_users_label
+    from ods.fact_user_hydra_browsing_activity
+  where
+    is_panamera = true
+and country_sk = 'olx|asia|in'
+and user_sk != 'unknown'
+and date_nk >= '2019-06-01'
+and user_active_new_returning_nk = 'new'
+ group by 1,2,3
+
+drop table if exists number_of_reply;
+select
+  panamera_user_sk,
+  date_sent_nk
+  into temp table number_of_reply
+ from ods.fact_replies
+ where
+   country_sk like '%in%'
+ and reply_num =1
+  group by 1,2
+
+drop table if exists numero_de_replies;
+select
+  panamera_user_sk,
+  date_sent_nk,
+  row_number()over(partition by panamera_user_sk order by date_sent_nk) as number_of_replies
+  into temp table numero_de_replies
+from number_of_reply
+
+;drop table if exists repliess;
+select
+   date_sent_nk,
+   case when f1.number_of_replies=1 then 'not_activated' else 'already_activate' end as activado_o_no,
+   count(distinct panamera_user_sk) as returning_repliers
+  into temp repliess
+  from numero_de_replies f1
+    left join new_users_label f2 on f1.panamera_user_sk=f2.user_sk and f1.date_sent_nk=f2.date_nk
+    where
+      date_sent_nk >= '2019-05-01'
+  and f2.user_sk is null
+group by 1,2;
+
+select
+ date_nk,
+ f2.activado_o_no,
+ f1.total_users - f1.new_users as returning_user,
+ f2.returning_repliers
+  from dau_new_and_retur f1
+   inner join repliess f2 on f1.date_nk=f2.date_sent_nk
+order by 1
+
+select
+  *
+  from livesync.panamera_device_tokens
+ where operation_timestamp > '2019-05-01'
+  and livesync_dbname = 'olxin'
+  and phpsessid like '|ID|%'
+limit 100
+
+select * from spectrum.
+
+select * from new_users_label where user_sk = 'olx|asia|in|platform|id|264521959' limit 100
+select * from ods.fact_replies   where country_sk = 'olx|asia|in' and reply_num = 1 and date_sent_nk >= '2019-06-01' limit 100
+select * from ods.fact_user_hydra_browsing_activity
+  where user_sk = 'olx|asia|in|platform|id|264521959'
+ and date_nk = '2019-06-01'
+
+select * from repliess
+limit 100
+
+
+
+
+select
+ date_nk,
+ f1.total_users - f1.new_users as returning_user,
+ f2.returning_repliers
+  from dau_new_and_retur f1
+   inner join repliess f2 on f1.date_nk=f2.date_sent_nk
+order by 1
+
+
+
+select
+  app_version,resultset_id
+  from ods.panameraolx_mea_hydra_ninja_ios_last_month
+   where
+     push_id in ('99c70f6f-29b5-4be5-b41a-682d5403608c',
+                       '6c224c00-4e7a-42d9-8224-4151a2053b90',
+                      '71980A48-5D64-4E16-AEB7-5B80BE7B0DD0',
+                      'e658849f-c3d5-48cb-963c-095824a83016',
+                      '1e52520f-cdca-40cb-89a1-faf5a83adc17',
+                      'a93f4965-91d9-4e14-9b80-03c9dc1dbd56',
+                      'cf5b6d3b-95fd-4503-96be-6a7ab0882e8d',
+                      '27b37ae4-9e5c-4bc2-9081-d5ad023dac54',
+                      'b2263919-4843-40b3-9716-3216cf293e62',
+                      '45cd2491-ef2d-402d-b191-146d2b5e8438',
+                      '9e77dde3-9586-4f55-9157-ce2dfb0c0123')
+group by 1,2
+
+select * from spectrum.usercomms_quijote_incoming_events
+ where params_extras_message_id in
+                      ('6c224c00-4e7a-42d9-8224-4151a2053b90',
+                      '71980A48-5D64-4E16-AEB7-5B80BE7B0DD0',
+                      'e658849f-c3d5-48cb-963c-095824a83016',
+                      '1e52520f-cdca-40cb-89a1-faf5a83adc17',
+                      'a93f4965-91d9-4e14-9b80-03c9dc1dbd56',
+                      'cf5b6d3b-95fd-4503-96be-6a7ab0882e8d',
+                      '27b37ae4-9e5c-4bc2-9081-d5ad023dac54',
+                      'b2263919-4843-40b3-9716-3216cf293e62',
+                      '45cd2491-ef2d-402d-b191-146d2b5e8438',
+                      '9e77dde3-9586-4f55-9157-ce2dfb0c0123')
+
+drop table if exists app_install;
+select
+  session_long,
+  date_event_nk
+  into temp table app_install
+   from ods.panameraolx_asia_hydra_ninja_android_last_month
+  where
+    trackevent like '%app_install%'
+and session_long_seq = 1
+group by 1,2
+
+drop table if exists onboarding_show;
+select
+  session_long,
+  date_event_nk
+  into temp table onboarding_show
+   from ods.panameraolx_asia_hydra_ninja_android_last_month
+  where
+    trackevent like '%onboarding_show%'
+ group by 1,2
+
+drop table if exists login_complete;
+select
+  session_long,
+  date_event_nk
+  into temp table login_complete
+   from ods.panameraolx_asia_hydra_ninja_android_last_month
+  where
+    trackevent like '%login_sign_in_complete%'
+ group by 1,2
+
+
+drop table if exists home;
+select
+  session_long,
+  date_event_nk
+  into temp table home
+   from ods.panameraolx_asia_hydra_ninja_android_last_month
+  where
+    trackevent like '%view_listings%'
+ group by 1,2
+
+drop table if exists funnel_value_prop;
+select
+  a.session_long,
+  a.date_event_nk,
+  1 as app_open,
+  case when b.session_long is not null then 1 else 0 end as onboarding_show,
+  case when c.session_long is not null then 1 else 0 end as login_complete,
+  case when d.session_long is not null then 1 else 0 end as home
+  into temp table funnel_value_prop
+   from app_install a
+    left join onboarding_show b using (session_long,date_event_nk)
+    left join login_complete c using (session_long,date_event_nk)
+    left join home d using (session_long,date_event_nk)
+
+select
+  date_event_nk,
+  sum(app_open) as app_open,
+  sum(onboarding_show) as onboarding_show,
+  sum(login_complete) as login_complete,
+  sum(home) as home
+  from funnel_value_prop
+   where date_event_nk < '2019-05-24'
+  group by 1
+
+
+---------------------------------------------------
+
+drop table if exists newusers;
+select
+  session_long
+   into temp table newusers
+   from ods.panameraolx_mea_hydra_ninja_android_last_month
+ where trackevent = 'onboarding_show'
+   and date_event_nk = '2019-05-01'
+group by 1
+
+drop table if exists matrix_daus;
+select
+  session_long,
+  date_event_nk
+   into temp table matrix_daus
+   from ods.panameraolx_mea_hydra_ninja_android_last_month a
+    inner join newusers b using (session_long)
+  WHERE (trackevent  NOT IN ('app_open', 'on_create', 'apps', 'push_dis','pushDis'
+, 'push_rcv', 'pushRcv', 'UAReg', 'ua_reg', 'uareg','push_dismissed', 'push_show'
+, 'fetching_matrix', 'not_found','permissions_impression','userBadgeCount'
+,'test_assignment', 'google_play_services'
+,'test_impression','test_discovered','appOpen', 'fetchTestDefinitionsError'
+, 'insertActiveTestListError', 'updateActiveTestError', 'deleteAllActiveTestsError'
+, 'getActiveTestListError', 'getExistingActiveTestListError', 'insertDiscoveredTestListError'
+, 'getDiscoveredTestListError', 'getChangedDiscoveredTestListError', 'deleteDiscoveredTestsThatAreActiveError'
+, 'deleteExpiredDiscoveredTestsError', 'setNotExecutedError', 'contextIsNull'
+, 'contextIsNotInstanceOfApplication', 'configIsNull', 'fetchTestDefinitionsError'
+, 'test_assignment', 'test_impression', 'test_discovered') OR
+        trackevent NOT ILIKE 'b2c%')
+group by 1,2
+
+drop table if exists loggers;
+select
+  session_long,
+  date_event_nk
+  into temp table loggers
+   from ods.panameraolx_mea_hydra_ninja_android_last_month
+ where trackevent = 'login_sign_in_complete'
+group by 1,2
+
+drop table if exists listers;
+select
+  session_long,
+  date_event_nk
+  into temp table listers
+   from ods.panameraolx_mea_hydra_ninja_android_last_month
+ where trackevent = 'posting_successful_post'
+  group by 1,2
+
+drop table if exists repliers;
+select
+  session_long,
+  date_event_nk
+  into temp table repliers
+   from ods.panameraolx_mea_hydra_ninja_android_last_month
+ where trackevent in ('item_tap_call' , 'item_chat_tap_send_1st_reply' , 'item_tap_sms' , 'item_chat_tap_sms')
+  group by 1,2
+
+drop table if exists view_item;
+select
+  session_long,
+  date_event_nk
+  into temp table view_item
+   from ods.panameraolx_mea_hydra_ninja_android_last_month
+ where trackevent = 'view_item'
+  group by 1,2
+
+select
+  a.date_event_nk,
+  a.session_long,
+  b.date_event_nk as date_loggers,
+  case when b.session_long is not null then 1 else 0 end as loggers,
+  c.date_event_nk as date_repliers,
+  case when c.session_long is not null then 1 else 0 end as repliers,
+  c.date_event_nk as date_listers,
+  case when d.session_long is not null then 1 else 0 end as listers,
+  d.date_event_nk as date_view_item,
+  case when e.session_long is not null then 1 else 0 end as view_item
+   from newusers a
+     left join loggers b on a.session_long=b.session_long
+     left join repliers c on a.session_long=c.session_long
+     left join listers d on a.session_long=d.session_long
+     left join view_item e on a.session_long=e.session_long
+group by 1,2,3,4,5,6,7,8,9,10
+limit 100
+
+--------------------------------------------------------
+drop table if exists newusers_20190501;
+select
+  session_long
+  into temp table newusers_20190501
+   from ods.fact_user_hydra_browsing_activity
+ where is_panamera = true
+ and country_sk = 'olx|asia|in'
+ and user_active_new_returning_nk = 'new'
+ and date_nk = '2019-02-28'
+group by 1
+
+drop table if exists matrix_dau;
+select
+  a.session_long,
+  a.date_nk,
+  case when channel_sk similar to ('%android%|%ios%') then 1 else 0 end as app,
+  case when channel_sk similar to ('%desktop%|%mobile%') then 1 else 0 end as pwa
+  into temp table matrix_dau
+   from ods.fact_user_hydra_browsing_activity a
+    inner join newusers_20190501 b on a.session_long=b.session_long
+ where is_panamera = true
+ and country_sk = 'olx|asia|in'
+group by 1,2,3,4
+
+drop table if exists repliers_browsing;
+select
+  a.session_long,
+  a.date_nk,
+  sum(num_tap_call) + sum(num_chat_1st_reply) as nro_replies
+  into temp table repliers_browsing
+   from ods.fact_user_hydra_browsing_activity a
+    inner join newusers_20190501 b on a.session_long=b.session_long
+ where
+   (is_panamera = true and country_sk = 'olx|asia|in' and num_tap_call>0)
+   or
+   (is_panamera = true and country_sk = 'olx|asia|in' and num_chat_1st_reply>0)
+group by 1,2
+
+
+drop table if exists listers_browsing;
+select
+  a.session_long,
+  a.date_nk
+  into temp table listers_browsing
+   from ods.fact_user_hydra_browsing_activity a
+    inner join newusers_20190501 b on a.session_long=b.session_long
+ where is_panamera = true
+ and country_sk = 'olx|asia|in'
+ and num_successful_post>0
+group by 1,2
+
+drop table if exists viewers_browsing;
+select
+  session_long,
+  date_nk
+  into temp table viewers_browsing
+   from ods.fact_user_hydra_browsing_activity
+ where is_panamera = true
+ and country_sk = 'olx|asia|in'
+ and num_adviews>0
+group by 1,2
+
+
+drop table if exists dataframe_for_cohort;
+select
+  a.session_long,
+  a.date_nk,
+  app,
+  pwa,
+  case when b.session_long is not null then 1 else 0 end as repliers,
+  case when b.nro_replies is not null then nro_replies else 0 end as nro_repliers,
+  case when c.session_long is not null then 1 else 0 end as listers,
+  case when d.session_long is not null then 1 else 0 end as view_item
+  into temp table dataframe_for_cohort
+   from matrix_dau a
+     left join repliers_browsing b using (session_long,date_nk)
+     left join listers_browsing c using (session_long,date_nk)
+     left join viewers_browsing d using (session_long,date_nk)
+  order by 1,2
+
+select distinct session_long from dataframe_for_cohort
+where repliers=0 and listers=0 and view_item=0
+limit 100
+
+
+select
+  *
+   from dataframe_for_cohort
+order by 1,2
+
+drop table if exists evolucion_de_shares;
+select
+  date_nk,
+  repliers,
+  listers,
+  view_item,
+  count(distinct session_long) as users
+   into temp table evolucion_de_shares
+   from dataframe_for_cohort
+group by 1,2,3,4
+
+select
+  date_nk,
+  SUM(case when (repliers=1 and listers=0 and view_item=1) or (repliers=1 and listers=0 and view_item=0) then users else null end) as Repliers,
+  SUM(case when (repliers=1 and listers=1 and view_item=1) or (repliers=1 and listers=1 and view_item=0) then users else null end) as Repliers_and_listers,
+  SUM(case when (repliers=0 and listers=0 and view_item=1) then users else null end) as Browsers,
+  SUM(case when (repliers=0 and listers=0 and view_item=0) then users else null end) as Not_even_browser,
+  SUM(case when (repliers=0 and listers=1 and view_item=0) or (repliers=0 and listers=1 and view_item=1)  then users else null end) as Listers,
+  SUM(users) as sum_users
+   from evolucion_de_shares
+group by 1
+
+drop table if exists min_date_for_activation;
+select
+  session_long,
+  min(date_nk) as min_date
+  into temp table min_date_for_activation
+   from dataframe_for_cohort
+  where repliers = 1
+ group by 1
+
+drop table if exists min_date_for_listers;
+select
+  session_long,
+  min(date_nk) as min_date
+  into temp table min_date_for_listers
+   from dataframe_for_cohort
+  where listers = 1
+ group by 1
+
+drop table if exists activated;
+select
+  a.*,
+  case when datediff(day , min_date,date_nk) < 0 or datediff(day , min_date,date_nk) is null then 'not_activated_yet' else 'activated' end as activation
+  into temp table activated
+   from dataframe_for_cohort a
+    left join min_date_for_activation b on a.session_long=b.session_long
+group by 1,2,3,4,5,6,7,8,9
+
+
+drop table if exists activated2;
+select
+  a.*,
+  case when b.min_date is null then 'not_lister_yet' else 'already_lister' end as listers_activation
+  into temp table activated2
+   from dataframe_for_cohort a
+    left join min_date_for_listers b on a.session_long=b.session_long
+group by 1,2,3,4,5,6,7,8
+
+select
+  date_nk,
+  app,
+  COUNT(distinct case when (repliers=1 and listers=0 and view_item=1) or (repliers=1 and listers=0 and view_item=0) then session_long else null end) as Repliers,
+  COUNT(distinct case when (repliers=1 and listers=1 and view_item=1) or (repliers=1 and listers=1 and view_item=0) then session_long else null end) as Repliers_and_listers,
+  COUNT(distinct case when (repliers=0 and listers=0 and view_item=1) then session_long else null end) as Browsers,
+  COUNT(distinct case when (repliers=0 and listers=0 and view_item=0) then session_long else null end) as Not_even_browser,
+  COUNT(distinct case when (repliers=0 and listers=1 and view_item=0) or (repliers=0 and listers=1 and view_item=1)  then session_long else null end) as Listers,
+  COUNT(distinct case when activation='activated' then session_long else null end) as activated,
+  COUNT(distinct session_long) as sum_users
+   from activated
+group by 1,2
+
+
+
+select * from activated limit 100
+
+
+select
+  date_nk,
+  count(distinct case when activation='activated' then session_long else null end) as activated,
+  count(distinct session_long) as dau
+   from activated
+ group by 1
+
+
+
+select
+  date_nk,
+  count(distinct session_long) as new_users,
+  sum(repliers) as repliers,
+  sum(listers) as listers,
+  sum(view_item) as adviewers
+   from dataframe_for_cohort
+group by 1
+
+
+--activation retention curve vs no activation retentio curve
+
+drop table if exists activatedusers;
+select
+  session_long
+  into temp table activatedusers
+    from dataframe_for_cohort
+  where repliers= 1 and date_nk='2019-05-01'
+group by 1
+
+drop table if exists noctivatedusers;
+select
+  session_long
+  into temp table noctivatedusers
+    from dataframe_for_cohort
+  where repliers= 0 and listers=0 and view_item=1 and date_nk='2019-05-01'
+group by 1
+
+drop table if exists dataframe_for_cohort_activated;
+select
+  a.*
+  into temp table dataframe_for_cohort_activated
+   from dataframe_for_cohort a
+     join activatedusers b using (session_long)
+
+drop table if exists dataframe_for_cohort_no_activated;
+select
+  a.*
+  into temp table dataframe_for_cohort_no_activated
+   from dataframe_for_cohort a
+     join noctivatedusers b using (session_long)
+
+
+select
+  date_nk,
+  COUNT(distinct case when (repliers=1 and listers=0 and view_item=1) or (repliers=1 and listers=0 and view_item=0) then session_long else null end) as Repliers,
+  COUNT(distinct case when (repliers=1 and listers=1 and view_item=1) or (repliers=1 and listers=1 and view_item=0) then session_long else null end) as Repliers_and_listers,
+  COUNT(distinct case when (repliers=0 and listers=0 and view_item=1) then session_long else null end) as Browsers,
+  COUNT(distinct case when (repliers=0 and listers=0 and view_item=0) then session_long else null end) as Not_even_browser,
+  COUNT(distinct case when (repliers=0 and listers=1 and view_item=0) or (repliers=0 and listers=1 and view_item=1)  then session_long else null end) as Listers,
+  COUNT(distinct session_long) as sum_users
+   from dataframe_for_cohort_no_activated
+group by 1
+
+-----------------------------------------------------------------------------------------------
+--------------------------- User already activated? -------------------------------------------
+
+select
+  date_nk,
+  count(distinct user_sk) as repliers
+  from ods.fact_user_hydra_browsing_activity
+   where (is_panamera = true
+  and country_sk = 'olx|asia|in'
+  and date_nk >= '2019-05-01'
+  and num_chat_1st_reply>0)
+   or
+     (is_panamera = true
+  and country_sk = 'olx|asia|in'
+  and date_nk >= '2019-05-01'
+  and num_tap_call>0)
+group by 1
+
+select
+  date_sent_nk,
+  count(distinct panamera_user_sk)
+    from ods.fact_replies
+  where reply_num=1
+  and country_sk = 'olx|asia|in'
+  and date_sent_nk >= '2019-05-01'
+group by 1
+
+-- Porque hay mas repliers en ods.fact_user_browsing_activity q en ods.fact_replies ?
+
+select
+  session_long,trackevent,session_long_seq
+    from ods.panameraolx_asia_hydra_ninja_android_last_month
+   where trackevent like '%account%'
+
+select
+   session_long,trackevent,session_long_seq,session_seq
+    from ods.panameraolx_asia_hydra_ninja_android_last_month
+   where
+     session_long='169a34877c2x766a8015'
+ and session_long_seq=451
+
+----------------------------------------------------------------------------------
+----------------------------------------------------------------------------------
+
+drop table if exists newusers;
+select
+  session_long
+   into temp table newusers
+   from ods.panameraolx_mea_hydra_ninja_android_last_month
+ where trackevent = 'onboarding_show'
+   and date_event_nk = '2019-02-11'
+group by 1
+
+drop table if exists matrix_daus;
+select
+  session_long,
+  date_event_nk
+   into temp table matrix_daus
+   from ods.panameraolx_mea_hydra_ninja_android_last_month a
+    inner join newusers b using (session_long)
+  WHERE (trackevent  NOT IN ('app_open', 'on_create', 'apps', 'push_dis','pushDis'
+, 'push_rcv', 'pushRcv', 'UAReg', 'ua_reg', 'uareg','push_dismissed', 'push_show'
+, 'fetching_matrix', 'not_found','permissions_impression','userBadgeCount'
+,'test_assignment', 'google_play_services'
+,'test_impression','test_discovered','appOpen', 'fetchTestDefinitionsError'
+, 'insertActiveTestListError', 'updateActiveTestError', 'deleteAllActiveTestsError'
+, 'getActiveTestListError', 'getExistingActiveTestListError', 'insertDiscoveredTestListError'
+, 'getDiscoveredTestListError', 'getChangedDiscoveredTestListError', 'deleteDiscoveredTestsThatAreActiveError'
+, 'deleteExpiredDiscoveredTestsError', 'setNotExecutedError', 'contextIsNull'
+, 'contextIsNotInstanceOfApplication', 'configIsNull', 'fetchTestDefinitionsError'
+, 'test_assignment', 'test_impression', 'test_discovered') OR
+        trackevent NOT ILIKE 'b2c%')
+group by 1,2
+
+drop table if exists repliers;
+select
+  session_long,
+  date_event_nk
+  into temp table repliers
+   from ods.panameraolx_mea_hydra_ninja_android_last_month
+ where
+   trackevent in ('item_tap_call' , 'item_chat_tap_send_1st_reply' , 'item_tap_sms' , 'item_chat_tap_sms')
+     and session_long_seq=1
+  group by 1,2
+
+drop table if exists dataframe_for_cohort_repliers;
+select
+  a.date_event_nk,
+  a.session_long,
+  case when c.session_long is not null then 1 else 0 end as repliers
+  into temp table dataframe_for_cohort_repliers
+   from matrix_daus a
+     left join repliers c on a.session_long=c.session_long and a.date_event_nk=c.date_event_nk
+group by 1,2,3
+
+select
+  date_event_nk,
+  count(distinct case when repliers=1 then session_long else null end) as repliers,
+  count(distinct session_long) as dau_proxy
+    from dataframe_for_cohort_repliers
+ group by 1
+ order by 1
+
+------- posting starter
+
+WITH verified AS (
+    SELECT session
+from ods.panameraolx_asia_hydra_ninja_android_last_month
+WHERE trackevent = 'posting_tap_post' and verified_lister is true
+)
+SELECT
+  COUNT(DISTINCT CASE WHEN trackevent = 'posting_tap_post' and verified_lister is true THEN session_long ELSE NULL END) AS posting_tap_post,
+  COUNT(DISTINCT CASE WHEN trackevent = 'posting_successful_post' THEN session_long ELSE NULL END) AS posting_successful_post
+FROM ods.panameraolx_asia_hydra_ninja_android_last_month
+JOIN verified USING (session)
+;
+
+select
+  app_version,
+  count(distinct session_long) as users
+  from ods.panameraolx_asia_hydra_ninja_android_last_month
+    where trackevent='onboarding_show'
+      and experiment_variant = 'mandatory_login'
+group by 1
+
+---------------------------------------------------------------------------------------------
+---------------------------------------------------------------------------------------------
+
+WITH session_of_starters AS (
+    SELECT session
+from ods.panameraolx_mea_hydra_ninja_android_last_month
+WHERE trackevent in ('onboarding_show','login_show')
+) , android_metric as (
+SELECT
+  date_event_nk,
+  'android' as channel,
+  COUNT(DISTINCT CASE WHEN trackevent in ('onboarding_show','login_show') THEN session_long ELSE NULL END) AS login_starters,
+  COUNT(DISTINCT CASE WHEN trackevent = 'login_sign_in_complete' THEN session_long ELSE NULL END) AS login_complete
+FROM ods.panameraolx_mea_hydra_ninja_android_last_month
+JOIN session_of_starters USING (session)
+  group by 1,2
+) , ios_login as (
+    SELECT session
+from ods.panameraolx_mea_hydra_ninja_ios_last_month
+WHERE trackevent in ('onboarding_show','login_show')
+) , ios_metric as (
+SELECT
+  date_event_nk,
+  'ios' as channel,
+  COUNT(DISTINCT CASE WHEN trackevent in ('onboarding_show','login_show') THEN session_long ELSE NULL END) AS login_starters,
+  COUNT(DISTINCT CASE WHEN trackevent = 'login_sign_in_complete' THEN session_long ELSE NULL END) AS login_complete
+FROM ods.panameraolx_mea_hydra_ninja_ios_last_month
+JOIN session_of_starters USING (session)
+  group by 1,2
+) , pwa_login as (
+    SELECT session
+from ods.panameraolx_mea_hydra_ninja_web_last_month
+WHERE trackevent in ('onboarding_show','login_show')
+) , pwa_metric as (
+SELECT
+  date_event_nk,
+  'pwa' as channel,
+  COUNT(DISTINCT CASE WHEN trackevent in ('onboarding_show','login_show') THEN session_long ELSE NULL END) AS login_starters,
+  COUNT(DISTINCT CASE WHEN trackevent = 'login_sign_in_complete' THEN session_long ELSE NULL END) AS login_complete
+FROM ods.panameraolx_mea_hydra_ninja_web_last_month
+JOIN session_of_starters USING (session)
+  group by 1,2
+)
+select
+  *
+   from android_metric
+ union all
+select
+  *
+   from ios_metric
+ union all
+select
+  *
+   from pwa_metric
+
+select
+
+--------------------------------------------------------------------------------
+
+select
+  *
+  from ods.panameraolx_asia_hydra_ninja_android_last_month
+ where trackevent in ('account_merging_show' , 'phone_already_in_use_action')
+order by session_long,session_long_seq,session_seq
+limit 100
+
+select
+  chosen_option,
+  origin_nk,
+  seller_id,
+  flow_type,
+  count(distinct session_long)
+  from ods.panameraolx_asia_hydra_ninja_android_last_month
+ where trackevent = 'phone_already_in_use_action'
+group by 1,2,3,4
+
+select
+  *
+   from ods.panameraolx_asia_hydra_ninja_android_last_month
+ where chosen_option='post' and user_nk = '266681289'
+limit 100
+
+
+select
+  *
+   from ods.panameraolx_asia_hydra_ninja_android_last_month
+ where session_long='169a5ddd1bdx827f0607' and session_long_seq = 319
+limit 100
+
+select
+  *
+
+WITH verified AS (
+    SELECT session
+from ods.panameraolx_asia_hydra_ninja_android_last_month
+WHERE trackevent = 'profile_completion_show' and origin_nk = 'on_boarding' and flow_step = 'has_picture'
+)
+SELECT
+  date_event_nk,
+  COUNT(DISTINCT CASE WHEN trackevent = 'profile_completion_show' and origin_nk = 'on_boarding' and flow_step = 'has_picture' THEN session_long ELSE NULL END) AS profile_completion_show_picture,
+  COUNT(DISTINCT CASE WHEN trackevent = 'profile_completion_action' and chosen_option = 'continue' and flow_step = 'has_picture' THEN session_long ELSE NULL END) AS has_picture
+FROM ods.panameraolx_asia_hydra_ninja_android_last_month
+JOIN verified USING (session)
+group by 1
+
+select
+  *
+  from ods.fact_resultset_performance
+ where country_sk = 'olx|asia|in'
+limit 100
+
+
+
+select
+  *
+  from ods.fact_user_hydra_browsing_activity
+where
+  session_long in ('1103839341224390000' ,
+'1124754794079980000' ,
+'1185e08c1f7x29bfc252' ,
+'165ae737cdbx64d9f7fa' ,
+'165afbd5fd9x69f81a13' ,
+'16813e7bb3fx2b878925' ,
+'168a8840aa9x77d0754f'
+)
+order by session_long,date_nk
+limit 100
+
+-- maniana 18:20 en la sede de belgrano favaloro
+
+improve engagement score per user
+improve recency
+improve frequency
+improve nro of sessions per user -- if the users improves sessions
+
+
+
+select
+  session_long,
+
+  from ods.fact_user_hydra_browsing_activity
+
+
+
+
+
+

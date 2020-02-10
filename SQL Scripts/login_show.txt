@@ -1,0 +1,297 @@
+
+
+select
+  date_nk,
+  count(distinct session_long) as dau
+  from ods.fact_user_hydra_browsing_activity
+ where
+        is_panamera is true
+    and country_sk = 'olx|asia|in'
+    and date_nk between '2019-02-01' and '2019-02-28'
+    and channel_sk like '%android%'
+ group by 1
+
+
+select
+  date_event_nk,
+  count(distinct case when trackevent = 'login_show' then session_long else null end) as login_show,
+  count(distinct case when trackevent = 'onboarding_show' then session_long else null end) as onboarding_show,
+  count(distinct case when trackevent = 'onboarding_show' or trackevent='login_show' then session_long else null end) as onboarding_show_and_login_show
+   from ods.panameraolx_asia_hydra_ninja_android_201902
+     where server_path = '/h/p-olx-android'
+ group by 1
+
+
+--- cuantas personas estan teniendo already in use
+
+WITH verified AS (
+    SELECT session
+from ods.panameraolx_mea_hydra_ninja_web_last_month
+WHERE trackevent = 'profile_completion_show'
+)
+SELECT
+  flow_step,
+  COUNT(DISTINCT CASE WHEN trackevent = 'profile_completion_show' THEN session_long ELSE NULL END) AS profile_completion_show,
+  COUNT(DISTINCT CASE WHEN trackevent = 'profile_completion_error' and error_message = 'This account is already in use' THEN session_long ELSE NULL END) AS account_already_in_use
+FROM ods.panameraolx_mea_hydra_ninja_web_last_month
+JOIN verified USING (session)
+group by 1
+;
+
+
+select
+
+    from ods.panameraolx_mea_hydra_ninja_web_last_month
+  where
+       trackevent    = 'profile_completion_error'
+  and  error_message = 'This account is already in use'
+
+
+---------------------------------------------------------------------------------
+
+select
+  date_event_nk,
+  count(distinct session_long) as qty_user
+   from ods.fact_login_complete
+  where country_sk = 'olx|mea|za'
+   and trackevent = 'login_sign_in_complete'
+     and channel_sk like '%web%'
+     and date_event_nk >= '2019-04-01'
+    group by 1
+
+
+
+------------------------------------------------
+
+drop table if exists startes_by_myaccount;
+select
+  session_long,
+  1 as startes_by_myaccount
+   into temp startes_by_myaccount
+   from ods.panameraolx_mea_hydra_ninja_android_last_month
+  where
+    trackevent = 'myaccount_action'
+ and chosen_option='profile_bar'
+ and country_sk = 'olx|mea|pk'
+ and app_version in ('13.14.04' , '13.14.05' , '13.14.06' , '13.14.07')
+group by 1,2
+order by 2,1
+
+drop table if exists startes_by_myaccount_login;
+select
+  n.session_long,
+  case when login_method = 'phone' then 1 else 0 end as phone,
+  case when login_method = 'email' then 1 else 0 end as email,
+  case when login_method = 'facebook' then 1 else 0 end as facebook,
+  case when login_method = 'google' then 1 else 0 end as google
+   into temp startes_by_myaccount_login
+   from ods.fact_login_complete n
+     inner join startes_by_myaccount m on m.session_long=n.session_long
+    where country_sk = 'olx|mea|pk'
+group by 1,2,3,4,5
+
+drop table if exists profile_completion_myaccount;
+select
+  f1.*,
+  case when f2.session_long is not null then 1 else 0 end as about_show,
+  case when f3.session_long is not null then 1 else 0 end as about_continue,
+  case when f4.session_long is not null then 1 else 0 end as about_skip,
+  case when f5.session_long is not null then 1 else 0 end as about_close,
+
+  case when f6.session_long is not null then 1 else 0 end as picture_show,
+  case when f7.session_long is not null then 1 else 0 end as picture_continue,
+  case when f8.session_long is not null then 1 else 0 end as picture_skip,
+  case when f9.session_long is not null then 1 else 0 end as picture_close,
+
+  case when f10.session_long is not null then 1 else 0 end as name_show,
+  case when f11.session_long is not null then 1 else 0 end as name_continue,
+  case when f12.session_long is not null then 1 else 0 end as name_skip,
+  case when f13.session_long is not null then 1 else 0 end as name_close,
+
+  case when f14.session_long is not null then 1 else 0 end as email_show,
+  case when f15.session_long is not null then 1 else 0 end as email_continue,
+  case when f16.session_long is not null then 1 else 0 end as email_skip,
+  case when f17.session_long is not null then 1 else 0 end as email_close,
+
+  case when f18.session_long is not null then 1 else 0 end as phone_show,
+  case when f19.session_long is not null then 1 else 0 end as phone_continue,
+  case when f20.session_long is not null then 1 else 0 end as phone_skip,
+  case when f21.session_long is not null then 1 else 0 end as phone_close,
+
+  case when f22.session_long is not null then 1 else 0 end as socialaccount_show,
+  case when f23.session_long is not null then 1 else 0 end as socialaccount_continue,
+  case when f24.session_long is not null then 1 else 0 end as socialaccount_skip,
+  case when f25.session_long is not null then 1 else 0 end as socialaccount_close
+
+  into temp profile_completion_myaccount
+   from startes_by_myaccount f1
+     left join (select session_long from ods.panameraolx_mea_hydra_ninja_android_last_month where trackevent='profile_completion_show'   and country_sk='olx|mea|pk' and origin_nk = 'profile_bar' and flow_step = 'has_about' group by 1) f2 on f1.session_long=f2.session_long
+     left join (select session_long from ods.panameraolx_mea_hydra_ninja_android_last_month where trackevent='profile_completion_action' and country_sk='olx|mea|pk' and origin_nk = 'profile_bar' and chosen_option = 'continue' and flow_step = 'has_about' group by 1) f3 on  f1.session_long=f3.session_long
+     left join (select session_long from ods.panameraolx_mea_hydra_ninja_android_last_month where trackevent='profile_completion_action' and country_sk='olx|mea|pk' and origin_nk = 'profile_bar' and chosen_option = 'skip' and flow_step = 'has_about' group by 1) f4 on  f1.session_long=f4.session_long
+     left join (select session_long from ods.panameraolx_mea_hydra_ninja_android_last_month where trackevent='profile_completion_action' and country_sk='olx|mea|pk' and origin_nk = 'profile_bar' and chosen_option = 'close' and flow_step = 'has_about' group by 1) f5 on  f1.session_long=f5.session_long
+
+     left join (select session_long from ods.panameraolx_mea_hydra_ninja_android_last_month where trackevent='profile_completion_show'   and country_sk='olx|mea|pk' and origin_nk = 'profile_bar' and flow_step = 'has_picture' group by 1) f6 on  f1.session_long=f6.session_long
+     left join (select session_long from ods.panameraolx_mea_hydra_ninja_android_last_month where trackevent='profile_completion_action' and country_sk='olx|mea|pk' and origin_nk = 'profile_bar' and chosen_option = 'continue' and flow_step = 'has_picture' group by 1) f7 on  f1.session_long=f7.session_long
+     left join (select session_long from ods.panameraolx_mea_hydra_ninja_android_last_month where trackevent='profile_completion_action' and country_sk='olx|mea|pk' and origin_nk = 'profile_bar' and chosen_option = 'skip' and flow_step = 'has_picture' group by 1) f8 on  f1.session_long=f8.session_long
+     left join (select session_long from ods.panameraolx_mea_hydra_ninja_android_last_month where trackevent='profile_completion_action' and country_sk='olx|mea|pk' and origin_nk = 'profile_bar' and chosen_option = 'close' and flow_step = 'has_picture' group by 1) f9 on  f1.session_long=f9.session_long
+
+     left join (select session_long from ods.panameraolx_mea_hydra_ninja_android_last_month where trackevent='profile_completion_show'   and country_sk='olx|mea|pk' and origin_nk = 'profile_bar' and flow_step = 'valid_name' group by 1) f10 on f1.session_long=f10.session_long
+     left join (select session_long from ods.panameraolx_mea_hydra_ninja_android_last_month where trackevent='profile_completion_action' and country_sk='olx|mea|pk' and origin_nk = 'profile_bar' and chosen_option = 'continue' and flow_step = 'valid_name' group by 1) f11 on  f1.session_long=f11.session_long
+     left join (select session_long from ods.panameraolx_mea_hydra_ninja_android_last_month where trackevent='profile_completion_action' and country_sk='olx|mea|pk' and origin_nk = 'profile_bar' and chosen_option = 'skip' and flow_step = 'valid_name' group by 1) f12 on  f1.session_long=f12.session_long
+     left join (select session_long from ods.panameraolx_mea_hydra_ninja_android_last_month where trackevent='profile_completion_action' and country_sk='olx|mea|pk' and origin_nk = 'profile_bar' and chosen_option = 'close' and flow_step = 'valid_name' group by 1) f13 on f1.session_long=f13.session_long
+
+     left join (select session_long from ods.panameraolx_mea_hydra_ninja_android_last_month where trackevent='profile_completion_show'   and country_sk='olx|mea|pk' and origin_nk = 'profile_bar' and flow_step = 'valid_email' group by 1) f14 on  f1.session_long=f14.session_long
+     left join (select session_long from ods.panameraolx_mea_hydra_ninja_android_last_month where trackevent='profile_completion_action' and country_sk='olx|mea|pk' and origin_nk = 'profile_bar' and chosen_option = 'continue' and flow_step = 'valid_email' group by 1) f15 on f1.session_long=f15.session_long
+     left join (select session_long from ods.panameraolx_mea_hydra_ninja_android_last_month where trackevent='profile_completion_action' and country_sk='olx|mea|pk' and origin_nk = 'profile_bar' and chosen_option = 'skip' and flow_step = 'valid_email' group by 1) f16 on  f1.session_long=f16.session_long
+     left join (select session_long from ods.panameraolx_mea_hydra_ninja_android_last_month where trackevent='profile_completion_action' and country_sk='olx|mea|pk' and origin_nk = 'profile_bar' and chosen_option = 'close' and flow_step = 'valid_email' group by 1) f17 on  f1.session_long=f17.session_long
+
+     left join (select session_long from ods.panameraolx_mea_hydra_ninja_android_last_month where trackevent='profile_completion_show'   and country_sk='olx|mea|pk' and origin_nk = 'profile_bar' and flow_step = 'valid_phone' group by 1) f18 on  f1.session_long=f18.session_long
+     left join (select session_long from ods.panameraolx_mea_hydra_ninja_android_last_month where trackevent='profile_completion_action' and country_sk='olx|mea|pk' and origin_nk = 'profile_bar' and chosen_option = 'continue' and flow_step = 'valid_phone' group by 1) f19 on  f1.session_long=f19.session_long
+     left join (select session_long from ods.panameraolx_mea_hydra_ninja_android_last_month where trackevent='profile_completion_action' and country_sk='olx|mea|pk' and origin_nk = 'profile_bar' and chosen_option = 'skip' and flow_step = 'valid_phone' group by 1) f20 on  f1.session_long=f20.session_long
+     left join (select session_long from ods.panameraolx_mea_hydra_ninja_android_last_month where trackevent='profile_completion_action' and country_sk='olx|mea|pk' and origin_nk = 'profile_bar' and chosen_option = 'close' and flow_step = 'valid_phone' group by 1) f21 on  f1.session_long=f21.session_long
+
+     left join (select session_long from ods.panameraolx_mea_hydra_ninja_android_last_month where trackevent='profile_completion_show'   and country_sk='olx|mea|pk' and origin_nk = 'profile_bar' and flow_step = 'social_account' group by 1) f22 on  f1.session_long=f22.session_long
+     left join (select session_long from ods.panameraolx_mea_hydra_ninja_android_last_month where trackevent='profile_completion_action' and country_sk='olx|mea|pk' and origin_nk = 'profile_bar' and chosen_option = 'continue' and flow_step = 'social_account' group by 1) f23 on  f1.session_long=f23.session_long
+     left join (select session_long from ods.panameraolx_mea_hydra_ninja_android_last_month where trackevent='profile_completion_action' and country_sk='olx|mea|pk' and origin_nk = 'profile_bar' and chosen_option = 'skip' and flow_step = 'social_account' group by 1) f24 on f1.session_long=f24.session_long
+     left join (select session_long from ods.panameraolx_mea_hydra_ninja_android_last_month where trackevent='profile_completion_action' and country_sk='olx|mea|pk' and origin_nk = 'profile_bar' and chosen_option = 'close' and flow_step = 'social_account' group by 1) f25 on  f1.session_long=f25.session_long
+
+select
+  t.*,m.google,m.facebook,m.phone,m.email
+   from profile_completion_myaccount t
+     inner join startes_by_myaccount_login m on m.session_long=t.session_long
+
+
+
+select
+  error_message,
+  error_type,
+  error_origin,
+  error_key,
+  flow_step,
+  count(distinct session_long) as picture
+  from ods.panameraolx_mea_hydra_ninja_android_last_month
+   where country_sk= 'olx|mea|pk'
+     and trackevent='profile_completion_error'
+group by 1,2,3,4,5
+
+
+
+-------------------
+
+drop table if exists ids_con_picture;
+select
+  distinct
+  session_long,
+  date_event_nk
+   into temp ids_con_picture
+   from ods.panameraolx_mea_hydra_ninja_web_last_month
+     where trackevent = 'profile_completion_action' and chosen_option = 'continue' and flow_step = 'has_picture'
+
+drop table if exists ids_con_nombre;
+select
+  distinct
+  session_long,
+  date_event_nk
+   into temp ids_con_nombre
+   from ods.panameraolx_mea_hydra_ninja_web_last_month
+     where trackevent = 'profile_completion_action' and chosen_option = 'continue' and flow_step = 'valid_name'
+
+
+select
+  distinct
+    b.session_long,
+    b.date_event_nk
+   from ids_con_nombre b
+     inner join ids_con_picture t on t.session_long=b.session_long
+
+
+
+drop table if exists ids_con_picture_android;
+select
+  distinct
+  session_long,
+  date_event_nk
+   into temp ids_con_picture
+   from ods.panameraolx_mea_hydra_ninja_android_last_month
+     where trackevent = 'profile_completion_action' and chosen_option = 'continue' and flow_step = 'has_picture'
+
+drop table if exists ids_con_nombre_android;
+select
+  distinct
+  session_long,
+  date_event_nk
+   into temp ids_con_nombre
+   from ods.panameraolx_mea_hydra_ninja_android_last_month
+     where trackevent = 'profile_completion_action' and chosen_option = 'continue' and flow_step = 'real_name'
+
+select
+  distinct
+     trackevent,
+     chosen_option
+   from ods.panameraolx_mea_hydra_ninja_android_last_month
+  where trackevent like '%profile%'
+
+select
+  *
+   from spectrum.hydra_p_olx_android
+  where params_cc = 'in'
+   and year = 2019
+    and month=6
+    and day=2
+    and hour=22
+    and params_device_model is not null
+limit 100
+
+
+select
+  count(distinct case when params_en = 'app_open' and month=6 and day=2 and hour=22 and params_v like '%13.15.02%'  then meta_session_long else null end) as cantidad_de_session_long,
+  count(distinct case when ((params_en = 'app_open' and month=6 and day=2 and hour=22 and params_device_model is not null and params_v like '%13.15.02%') or
+                           (params_en = 'app_open' and month=6 and day=2 and hour=22 and params_device_info_model_device_model is not null and params_v like '%13.15.02%')) then meta_session_long else null end) as cantidad_de_session_long_con_paramsnotnull,
+  count(distinct case when params_en = 'app_open' and month=6 and day=2 and hour=22 and params_v like '%13.15.02%' and params_device_info_model_device_brand is not null  then meta_session_long else null end) as cantidad_de_session_long_brand
+    from spectrum.hydra_p_olx_android
+
+-- params_device_info_model_device_brand : Brand
+-- params_device_info_model_device_manufacturer: Brand
+-- params_device_info_model_device_model : Model
+
+-- params_device_model : Model
+
+
+select
+  experiment_variant,
+  login_method,
+  count(distinct session_long)
+   from ods.panameraolx_asia_hydra_ninja_android_last_month
+  where trackevent = 'login_sign_in_complete'
+group by 1,2
+
+
+select
+  date_nk ,
+  count(distinct session_long) as users
+   from ods.fact_user_hydra_browsing_activity
+  where country_sk = 'olx|asia|in'
+    and channel_sk like '%android%'
+    and is_panamera = true
+    and date_nk > '2019-02-11'
+  group by 1
+  order by 1
+
+
+----------------------------------------------------
+
+select
+  *
+  from ods.panameraolx_asia_
+
+
+select
+  date_event_nk,
+  count(distinct session_long) as dau
+   from ods.panameraolx_mea_hydra_ninja_android_201905
+ where chosen_option = 'profile_bar'
+      and country_sk = 'olx|mea|pk'
+group by 1
+
+
+
